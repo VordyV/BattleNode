@@ -1,0 +1,8 @@
+class LoaderPluginExistsException(Exception): pass
+class LoaderNoClassException(Exception): pass
+class LoaderInvalidVerSpecException(Exception): pass
+class LoaderNoDepPluginException(Exception): pass
+class LoaderReLoadPluginException(Exception): pass
+class LoaderNoEventInstException(Exception): pass
+class LoaderShutNonWorkException(Exception): pass
+class LoaderDisableModuleException(Exception): pass

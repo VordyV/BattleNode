@@ -1,5 +1,5 @@
 from ._plugin_statuses import PluginStatuses
-from ._events import Events
+from ._events import EventCollection
 from ._config import Config as Configure
 from abc import ABC
 from loguru import logger
@@ -8,7 +8,7 @@ import pydantic
 
 class BasePlugin(ABC):
 
-    events: Events = None
+    events: EventCollection = None
     Config: pydantic.BaseModel = None
 
     def __init__(self, battlenode, config: Configure, logger):

@@ -1,11 +1,16 @@
-from ._config import Configurator
-from loguru import logger
 import multiprocessing
-import battlenode
 
 class Process:
 
     def __init__(self, target):
         self.__process = multiprocessing.Process(target=target, args=())
 
-        
+    def start(self):
+        self.__process.start()
+
+    def stop(self):
+        self.__process.terminate()
+
+    @property
+    def pid(self):
+        return self.__process.pid

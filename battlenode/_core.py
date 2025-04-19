@@ -1,8 +1,8 @@
 from ._loader import Loader
-from ._events import eventsEmitter
+from ._events import EventHub, EventData
 from ._config import Configurator
 from loguru import logger
-from typing import Any
+import multiprocessing
 import battlenode
 import pydantic
 import asyncio
@@ -11,11 +11,6 @@ import sys
 
 class DataBaseConfig(pydantic.BaseModel):
     engine: str = "tortoise.backends.mysql"
-    host: str
-    port: int
-    user: str
-    password: str
-    name: str
     use_tz: bool = False
     timezone: str = "UTC"
 
@@ -25,8 +20,10 @@ class BattleNodeConfig(pydantic.BaseModel):
 class BattleNode:
 
     def __init__(self, plugin_folder: str = "plugins"):
+        multiprocessing.set_start_method("spawn", force=True)
         self.__plugin_folder = plugin_folder
         self.__configurator = Configurator(filename=f"{battlenode.__name__}.cfg.json")
+        self.__events = EventHub()
         self.__config = None
         self.__loader = Loader(folder=self.__plugin_folder, battlenode=self)
         self.__event = asyncio.Event()
@@ -35,8 +32,12 @@ class BattleNode:
         logger.add(sys.stdout, colorize=True, enqueue=True, format="<green>{time:HH:mm:ss}</green> <level>{message}</level>", filter=lambda record: "plugin" not in record["extra"])
         logger.add(sys.stdout, colorize=True, enqueue=True, format="<green>{time:HH:mm:ss}</green> <white>[{extra[plugin]}]</white> <level>{message}</level>", filter=lambda record: "plugin" in record["extra"])
 
-        eventsEmitter.on("battlenode.start", self.__on_event_start)
-        eventsEmitter.on("battlenode.stop", self.__on_event_stop)
+        self.__events.on("battlenode.start", self.__on_event_start)
+        self.__events.on("battlenode.stop", self.__on_event_stop)
+
+    @property
+    def events(self):
+        return self.__events
 
     @property
     def configurator(self):
@@ -53,10 +54,10 @@ class BattleNode:
     def __signal_handler(self, sig, frame):
         self.__event.set()
 
-    async def __on_event_start(self):
+    async def __on_event_start(self, event: EventData):
         logger.info("BattleNode Launch...")
 
-    async def __on_event_stop(self):
+    async def __on_event_stop(self, event: EventData):
         logger.info("Shutting down...")
 
     def __load_config(self):
@@ -66,12 +67,12 @@ class BattleNode:
             logger.error("configuration has not been loaded: {error}", error=error)
 
     async def __start(self):
-        eventsEmitter.emit_future(f"{battlenode.__name__}.start")
+        self.__events.emit_future(f"{battlenode.__name__}.start")
         await self.__configurator.load()
         self.__load_config()
         await self.__loader.load_plugins()
         await self.__event.wait()
-        eventsEmitter.emit_future(f"{battlenode.__name__}.stop")
+        self.__events.emit_future(f"{battlenode.__name__}.stop")
         await self.__loader.shutdown_plugins()
 
     def run(self):

@@ -8,7 +8,7 @@ import asyncio
 from ._loader_exceptions import *
 from ._plugin import Plugin, BasePlugin
 from ._plugin_statuses import PluginStatuses
-from ._events import eventsEmitter, Events
+from ._events import EventHub, EventCollection
 import inspect
 import packaging.version
 import packaging.specifiers
@@ -20,6 +20,7 @@ class Loader:
     def __init__(self, folder: str, battlenode):
         self.__folder = folder
         self.__battlenode = battlenode
+        self.__events = self.__battlenode.events
         self.__plugins: dict[str, Plugin] = {}
 
     async def load_plugins(self):
@@ -98,13 +99,13 @@ class Loader:
             raise
 
     async def _shutdown_plugin(self, plugin: Plugin):
-        await eventsEmitter.emit_async(f"{plugin.name}.shutdown")
+        await self.__events.emit_async(f"{plugin.name}.shutdown")
 
         await self.__set_status(plugin, PluginStatuses.STOPPED)
         _events = plugin.instance.events.get()
         for e in _events:
-            if "." in e["event"]: eventsEmitter.off(e["event"], getattr(plugin.instance, e["func"]))
-            else: eventsEmitter.off(f"{plugin.name}.{e["event"]}", getattr(plugin.instance, e["func"]))
+            if "." in e["event"]: self.__events.off(e["event"], getattr(plugin.instance, e["func"]))
+            else: self.__events.off(f"{plugin.name}.{e["event"]}", getattr(plugin.instance, e["func"]))
 
     async def reload_plugin(self, plugin: Plugin):
         if plugin.status != PluginStatuses.RUNNING: raise LoaderShutNonWorkException(f"Plugin {plugin.name} is inoperable and cannot be turned off")
@@ -129,7 +130,7 @@ class Loader:
 
     async def __set_status(self, plugin: Plugin, status: PluginStatuses):
         plugin._set_status(status)
-        eventsEmitter.emit_future(f"{plugin.name}.statuschange", status)
+        self.__events.emit_future(f"{plugin.name}.statuschange", status)
 
     def _import_pl(self, plugin: Plugin):
         path = f"{self.__folder}.{plugin.name}"
@@ -159,19 +160,19 @@ class Loader:
         plugin._set_instance(instance)
         plugin._set_module(module)
 
-        if instance is None or not isinstance(instance, Events): LoaderNoEventInstException(f"Plugin {plugin.name} does not contain an instance of the Events class")
+        if instance is None or not isinstance(instance, EventCollection): LoaderNoEventInstException(f"Plugin {plugin.name} does not contain an instance of the Events class")
 
         _events = instance.events.get()
         for e in _events:
-            if "." in e["event"]: eventsEmitter.on(e["event"], getattr(instance, e["func"]))
-            else: eventsEmitter.on(f"{plugin.name}.{e["event"]}", getattr(instance, e["func"]))
+            if "." in e["event"]: self.__events.on(e["event"], getattr(instance, e["func"]))
+            else: self.__events.on(f"{plugin.name}.{e["event"]}", getattr(instance, e["func"]))
 
     async def _init_pl(self, plugin: Plugin):
         spec_ver_pl = packaging.specifiers.SpecifierSet(plugin.meta.requires_battlenode)
         ver_bn = packaging.version.parse(battlenode.__version__)
         if ver_bn not in spec_ver_pl: raise LoaderInvalidVerSpecException(f"Plugin {plugin.name} cannot run on this version {battlenode.__version__}. Possible versions: {plugin.meta.requires_battlenode}")
         self.__check_dependencies_pl(plugin)
-        await eventsEmitter.emit_async(f"{plugin.name}.init")
+        await self.__events.emit_async(f"{plugin.name}.init")
 
     def __check_dependencies_pl(self, plugin: Plugin):
         for name, spec_ver in plugin.meta.dependencies.items():

@@ -1,4 +1,7 @@
-from battlenode import BattleNode
+from dotenv import load_dotenv
+load_dotenv()
 
-pm = BattleNode()
-pm.run()
+if __name__ == '__main__':
+    from battlenode import BattleNode
+    pm = BattleNode()
+    pm.run()

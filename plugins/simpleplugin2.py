@@ -1,4 +1,4 @@
-from battlenode import BasePlugin, Events
+from battlenode import BasePlugin, EventCollection, EventData
 import asyncio
 from tornado.tcpserver import TCPServer
 from tornado.iostream import StreamClosedError
@@ -15,7 +15,7 @@ class EchoServer(TCPServer):
 
 class SimplePlugin2(BasePlugin):
 
-    events = Events()
+    events = EventCollection()
 
     class Meta(BasePlugin.Meta):
         name = "SimplePlugin2"
@@ -25,11 +25,11 @@ class SimplePlugin2(BasePlugin):
         }
 
     @events.on("init")
-    async def on_init(self):
+    async def on_init(self, event: EventData):
         self.logger.info("start pl 2")
         server = EchoServer()
         server.listen(8009)
 
     @events.on("shutdown")
-    async def on_shutdown(self):
+    async def on_shutdown(self, event: EventData):
         self.logger.info("stop pl 2")

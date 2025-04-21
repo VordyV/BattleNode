@@ -34,7 +34,7 @@ class Loader:
         for plugin, result in zip(self.__plugins.values(), results):
             if isinstance(result, Exception):
                 await self.__set_status(plugin, PluginStatuses.ERROR)
-                plugin.logger.error("plugin not loaded: {error}", error=result)
+                plugin.logger.exception("plugin not loaded: {error}", error=result)
                 #print("LOAD ERROR", plugin.name, result)
 
     async def shutdown_plugins(self):
@@ -48,7 +48,7 @@ class Loader:
         for plugin, result in zip(self.__plugins.values(), results):
             if isinstance(result, Exception):
                 await self.__set_status(plugin, PluginStatuses.ERROR)
-                plugin.logger.error("plugin didn't shut down properly: {error}", error=result)
+                plugin.logger.exception("plugin didn't shut down properly: {error}", error=result)
                 #print("SHUTDOWN ERROR", plugin.name, result)
 
     async def reload_plugins(self):
@@ -62,7 +62,7 @@ class Loader:
         for plugin, result in zip(self.__plugins.values(), results):
             if isinstance(result, Exception):
                 await self.__set_status(plugin, PluginStatuses.ERROR)
-                plugin.logger.error("plugin did not reload correctly: {error}", error=result)
+                plugin.logger.exception("plugin did not reload correctly: {error}", error=result)
                 #print("RELOAD ERROR", plugin.name, result)
 
     async def load_plugin(self, module_name: str):
@@ -191,5 +191,5 @@ class Loader:
         return plugin
 
     def _get_all_plugin(self) -> list[str]:
-        return ["simpleplugin", "simpleplugin2"]
+        return self.__battlenode.config.plugins
 

@@ -14,5 +14,6 @@ Events that are not related to plugins are global and are called by the applicat
 |--------------------|-----------|----------------------------------|
 | `battlenode.start` | -         | The application has started      |
 | `battlenode.stop`  | -         | The application is shutting down |
+| `battlenode.error` | str       | There was an unexpected error    |
 
 

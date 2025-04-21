@@ -10,6 +10,7 @@ class BasePlugin(ABC):
 
     events: EventCollection = None
     Config: pydantic.BaseModel = None
+    models: list[str] = []
 
     def __init__(self, battlenode, config: Configure, logger):
         self.__battlenode = battlenode

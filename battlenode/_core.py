@@ -16,6 +16,7 @@ class DataBaseConfig(pydantic.BaseModel):
 
 class BattleNodeConfig(pydantic.BaseModel):
     database: DataBaseConfig
+    plugins: list[str]
 
 class BattleNode:
 
@@ -34,6 +35,7 @@ class BattleNode:
 
         self.__events.on("battlenode.start", self.__on_event_start)
         self.__events.on("battlenode.stop", self.__on_event_stop)
+        self.__events.on("battlenode.error", self.__on_event_error)
 
     @property
     def events(self):
@@ -60,16 +62,19 @@ class BattleNode:
     async def __on_event_stop(self, event: EventData):
         logger.info("Shutting down...")
 
-    def __load_config(self):
+    async def __on_event_error(self, event: EventData, error):
+        logger.error(error)
+
+    async def __load_config(self):
         try:
             self.__config = self.__configurator.get_section(battlenode.__name__, BattleNodeConfig)
         except Exception as error:
-            logger.error("configuration has not been loaded: {error}", error=error)
+            self.__events.emit_future(f"{battlenode.__name__}.error", f"configuration has not been loaded: {error}")
 
     async def __start(self):
         self.__events.emit_future(f"{battlenode.__name__}.start")
         await self.__configurator.load()
-        self.__load_config()
+        await self.__load_config()
         await self.__loader.load_plugins()
         await self.__event.wait()
         self.__events.emit_future(f"{battlenode.__name__}.stop")

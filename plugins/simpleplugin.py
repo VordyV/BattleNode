@@ -1,5 +1,4 @@
 from battlenode import BasePlugin, EventCollection, EventData
-from tortoise import Tortoise
 import multiprocessing
 import asyncio
 import pydantic

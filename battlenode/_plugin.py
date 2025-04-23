@@ -3,14 +3,17 @@ from ._events import EventCollection
 from ._config import Config as Configure
 from abc import ABC
 from loguru import logger
+from typing import Union, Callable, Optional
 import battlenode
 import pydantic
 
 class BasePlugin(ABC):
 
     events: EventCollection = None
-    Config: pydantic.BaseModel = None
-    models: list[str] = []
+    Config: Optional[pydantic.BaseModel] = None
+    app: Optional[list[str]] = []
+    process_target: Optional[Callable] = None
+    run_as_process: Optional[bool] = False
 
     def __init__(self, battlenode, config: Configure, logger):
         self.__battlenode = battlenode
@@ -44,6 +47,7 @@ class Plugin:
         self.__status: PluginStatuses = PluginStatuses.WAITING
         self.__meta: BasePlugin.Meta = None
         self.__logger = logger.bind(plugin=self.__name)
+        self.__app: dict = {}
 
     @property
     def instance(self):
@@ -69,6 +73,10 @@ class Plugin:
     def logger(self):
         return self.__logger
 
+    @property
+    def app(self):
+        return self.__app
+
     def _set_instance(self, instance: BasePlugin):
         self.__instance = instance
         self.__meta = instance.Meta
@@ -80,3 +88,6 @@ class Plugin:
 
     def _set_module(self, module: object):
         self.__module = module
+
+    def _set_app(self, app: dict):
+        self.__app = app

@@ -20,8 +20,6 @@ class SimplePlugin(BasePlugin):
     class Config(pydantic.BaseModel):
         option: str = "Hello"
 
-    models = ["plugins.spmodels"]
-
     def __import_from_path(self, module_name, file_path):
         spec = importlib.util.spec_from_file_location(module_name, file_path)
         module = importlib.util.module_from_spec(spec)

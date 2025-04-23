@@ -16,8 +16,8 @@ dependencies = [
     "anyio (>=4.9.0,<5.0.0)",
     "tornado (>=6.4.2,<7.0.0)",
     "python-dotenv (>=1.1.0,<2.0.0)",
-    "peewee (>=3.17.9,<4.0.0)",
-    "peewee-async[mysql] (>=1.1.0,<2.0.0)",
+    "tortoise-orm[asyncmy] (>=0.25.0,<0.26.0)",
+    "asyncmy (>=0.2.10,<0.3.0)",
 ]
 
 

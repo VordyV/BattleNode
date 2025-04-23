@@ -1,6 +1,7 @@
 from ._loader import Loader
 from ._events import EventHub, EventData
 from ._config import Configurator
+from ._database import init_database, close_database
 from loguru import logger
 import multiprocessing
 import battlenode
@@ -78,6 +79,7 @@ class BattleNode:
         await self.__loader.load_plugins()
         await self.__event.wait()
         self.__events.emit_future(f"{battlenode.__name__}.stop")
+        await close_database()
         await self.__loader.shutdown_plugins()
 
     def run(self):

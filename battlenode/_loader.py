@@ -1,4 +1,3 @@
-import glob
 import os
 import sys
 import importlib
@@ -9,6 +8,7 @@ from ._loader_exceptions import *
 from ._plugin import Plugin, BasePlugin
 from ._plugin_statuses import PluginStatuses
 from ._events import EventHub, EventCollection
+from ._database import init_database, close_database
 import inspect
 import packaging.version
 import packaging.specifiers
@@ -35,7 +35,16 @@ class Loader:
             if isinstance(result, Exception):
                 await self.__set_status(plugin, PluginStatuses.ERROR)
                 plugin.logger.exception("plugin not loaded: {error}", error=result)
-                #print("LOAD ERROR", plugin.name, result)
+
+        await self.init_database()
+
+    def __get_apps(self):
+        return {pl.name: pl.app for pl in self.__plugins.values()}
+
+    async def init_database(self):
+        print(self.__get_apps())
+
+        await init_database(self.__get_apps())
 
     async def shutdown_plugins(self):
         tasks = []
@@ -50,6 +59,8 @@ class Loader:
                 await self.__set_status(plugin, PluginStatuses.ERROR)
                 plugin.logger.exception("plugin didn't shut down properly: {error}", error=result)
                 #print("SHUTDOWN ERROR", plugin.name, result)
+
+        await close_database()
 
     async def reload_plugins(self):
         tasks = []
@@ -157,10 +168,14 @@ class Loader:
             config = self.__battlenode.configurator.get_section(plugin.name, cls.Config)
 
         instance = cls(self.__battlenode, config, plugin.logger)
-        plugin._set_instance(instance)
-        plugin._set_module(module)
 
         if instance is None or not isinstance(instance, EventCollection): LoaderNoEventInstException(f"Plugin {plugin.name} does not contain an instance of the Events class")
+        #"minsize": app.get("minsize", os.getenv("BN_DATABASE_MINSIZE")),
+        #"maxsize": app.get("maxsize", os.getenv("BN_DATABASE_MAXSIZE")),
+        #"connect_timeout": app.get("connect_timeout", os.getenv("BN_DATABASE_TIMEOUT")),
+        plugin._set_instance(instance)
+        plugin._set_module(module)
+        plugin._set_app(cls.app)
 
         _events = instance.events.get()
         for e in _events:

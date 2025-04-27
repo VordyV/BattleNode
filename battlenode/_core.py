@@ -76,6 +76,7 @@ class BattleNode:
         self.__events.emit_future(f"{battlenode.__name__}.start")
         await self.__configurator.load()
         await self.__load_config()
+        await self.__loader.init()
         await self.__loader.load_plugins()
         await self.__event.wait()
         self.__events.emit_future(f"{battlenode.__name__}.stop")

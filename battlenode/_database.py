@@ -12,11 +12,11 @@ async def init_database(apps: dict):
                     "database": os.getenv("BN_DATABASE_NAME"),
                     "host": os.getenv("BN_DATABASE_HOST"),
                     "password": os.getenv("BN_DATABASE_PASSWORD"),
-                    "port": os.getenv("BN_DATABASE_PORT"),
+                    "port": int(os.getenv("BN_DATABASE_PORT")),
                     "user": os.getenv("BN_DATABASE_USER"),
-                    "minsize": os.getenv("BN_DATABASE_MINSIZE"),
-                    "maxsize": os.getenv("BN_DATABASE_MAXSIZE"),
-                    "connect_timeout": os.getenv("BN_DATABASE_TIMEOUT"),
+                    "minsize": int(os.getenv("BN_DATABASE_MINSIZE")),
+                    "maxsize": int(os.getenv("BN_DATABASE_MAXSIZE")),
+                    "connect_timeout": int(os.getenv("BN_DATABASE_TIMEOUT")),
                 }
             }
         },

@@ -9,6 +9,7 @@ from ._plugin import Plugin, BasePlugin
 from ._plugin_statuses import PluginStatuses
 from ._events import EventHub, EventCollection
 from ._database import init_database, close_database
+from ._process import ProcessSupervisor
 import inspect
 import packaging.version
 import packaging.specifiers
@@ -22,6 +23,24 @@ class Loader:
         self.__battlenode = battlenode
         self.__events = self.__battlenode.events
         self.__plugins: dict[str, Plugin] = {}
+        self.__prodis = ProcessSupervisor(
+            on_submitted=self._on_event_prodis_submitted,
+            on_executes=self._on_event_prodis_executes,
+            on_error=self._on_event_prodis_error
+        )
+
+    async def _on_event_prodis_submitted(self, event):
+        self.__events.emit_async(f"{event.job_id}.process.submitted", event)
+
+    async def _on_event_prodis_executes(self, event):
+        self.__events.emit_async(f"{event.job_id}.process.executes", event)
+
+    async def _on_event_prodis_error(self, event):
+        self.__events.emit_async(f"{event.job_id}.process.error", event)
+        #self.shutdown_plugin()
+
+    async def init(self):
+        await self.__prodis.init()
 
     async def load_plugins(self):
         if len(self.__plugins) > 1: raise LoaderReLoadPluginException("Plugins have already been loaded. Use reload methods")
@@ -112,6 +131,9 @@ class Loader:
     async def _shutdown_plugin(self, plugin: Plugin):
         await self.__events.emit_async(f"{plugin.name}.shutdown")
 
+        if plugin.instance.run_as_process and plugin.instance.process_target and plugin.status.RUNNING:
+            self.__prodis.stop_process(plugin.name)
+
         await self.__set_status(plugin, PluginStatuses.STOPPED)
         _events = plugin.instance.events.get()
         for e in _events:
@@ -182,12 +204,18 @@ class Loader:
             if "." in e["event"]: self.__events.on(e["event"], getattr(instance, e["func"]))
             else: self.__events.on(f"{plugin.name}.{e["event"]}", getattr(instance, e["func"]))
 
+        if cls.run_as_process and cls.process_target:
+            self.__prodis.add_process(plugin.name, cls.process_target)
+
     async def _init_pl(self, plugin: Plugin):
         spec_ver_pl = packaging.specifiers.SpecifierSet(plugin.meta.requires_battlenode)
         ver_bn = packaging.version.parse(battlenode.__version__)
         if ver_bn not in spec_ver_pl: raise LoaderInvalidVerSpecException(f"Plugin {plugin.name} cannot run on this version {battlenode.__version__}. Possible versions: {plugin.meta.requires_battlenode}")
         self.__check_dependencies_pl(plugin)
         await self.__events.emit_async(f"{plugin.name}.init")
+
+        if plugin.instance.run_as_process and plugin.instance.process_target:
+            self.__prodis.run_process(plugin.name)
 
     def __check_dependencies_pl(self, plugin: Plugin):
         for name, spec_ver in plugin.meta.dependencies.items():

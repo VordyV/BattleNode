@@ -9,6 +9,10 @@ from .timi import main
 class SimplePlugin(BasePlugin):
 
     events = EventCollection()
+    app = ["plugins.spmodels"]
+
+    process_target = main
+    run_as_process = True
 
     class Meta(BasePlugin.Meta):
         name = "SimplePlugin"

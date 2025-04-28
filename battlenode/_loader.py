@@ -30,13 +30,13 @@ class Loader:
         )
 
     async def _on_event_prodis_submitted(self, event):
-        self.__events.emit_async(f"{event.job_id}.process.submitted", event)
+        self.__events.emit_future(f"{event.job_id}.process.submitted", event)
 
     async def _on_event_prodis_executes(self, event):
-        self.__events.emit_async(f"{event.job_id}.process.executes", event)
+        self.__events.emit_future(f"{event.job_id}.process.executes", event)
 
     async def _on_event_prodis_error(self, event):
-        self.__events.emit_async(f"{event.job_id}.process.error", event)
+        self.__events.emit_future(f"{event.job_id}.process.error", event)
         #self.shutdown_plugin()
 
     async def init(self):

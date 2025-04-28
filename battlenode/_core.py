@@ -1,7 +1,12 @@
+import os
+
+from pyexpat.errors import messages
+
 from ._loader import Loader
 from ._events import EventHub, EventData
 from ._config import Configurator
 from ._database import init_database, close_database
+import redis.asyncio as redis
 from loguru import logger
 import multiprocessing
 import battlenode
@@ -26,6 +31,8 @@ class BattleNode:
         self.__plugin_folder = plugin_folder
         self.__configurator = Configurator(filename=f"{battlenode.__name__}.cfg.json")
         self.__events = EventHub()
+        self.__redis: redis.Redis | None = None
+        self.__rps: redis.client.PubSub | None = None
         self.__config = None
         self.__loader = Loader(folder=self.__plugin_folder, battlenode=self)
         self.__event = asyncio.Event()
@@ -37,6 +44,8 @@ class BattleNode:
         self.__events.on("battlenode.start", self.__on_event_start)
         self.__events.on("battlenode.stop", self.__on_event_stop)
         self.__events.on("battlenode.error", self.__on_event_error)
+        self.__events.on("*.*", self.__on_event_all)
+        self.__events.on("*.*.*", self.__on_event_all)
 
     @property
     def events(self):
@@ -53,6 +62,13 @@ class BattleNode:
     @property
     def config(self):
         return self.__config
+
+    @property
+    def redis(self):
+        return self.__redis
+
+    async def __on_event_all(self, event, *args):
+        await self.__redis.publish(event.name, "9")
 
     def __signal_handler(self, sig, frame):
         self.__event.set()
@@ -73,12 +89,15 @@ class BattleNode:
             self.__events.emit_future(f"{battlenode.__name__}.error", f"configuration has not been loaded: {error}")
 
     async def __start(self):
+        self.__redis = redis.Redis(host=os.getenv("BN_REDIS_HOST"), port=int(os.getenv("BN_REDIS_PORT")), db=int(os.getenv("BN_REDIS_NAME")), password=os.getenv("BN_REDIS_PASSWORD"))
         self.__events.emit_future(f"{battlenode.__name__}.start")
         await self.__configurator.load()
         await self.__load_config()
+        self.__rps = self.__redis.pubsub()
         await self.__loader.init()
         await self.__loader.load_plugins()
         await self.__event.wait()
+        await self.__redis.close()
         self.__events.emit_future(f"{battlenode.__name__}.stop")
         await close_database()
         await self.__loader.shutdown_plugins()

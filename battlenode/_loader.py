@@ -35,9 +35,16 @@ class Loader:
     async def _on_event_prodis_executes(self, event):
         self.__events.emit_future(f"{event.job_id}.process.executes", event)
 
+        plugin = self.__plugins[event.job_id]
+        if plugin.instance.run_as_process and plugin.instance.process_target and plugin.status == PluginStatuses.RUNNING:
+            await self.shutdown_plugin(plugin)
+
     async def _on_event_prodis_error(self, event):
         self.__events.emit_future(f"{event.job_id}.process.error", event)
-        #self.shutdown_plugin()
+        
+        plugin = self.__plugins[event.job_id]
+        if plugin.instance.run_as_process and plugin.instance.process_target and plugin.status == PluginStatuses.RUNNING:
+            await self.shutdown_plugin(plugin)
 
     async def init(self):
         await self.__prodis.init()
@@ -163,6 +170,7 @@ class Loader:
 
     async def __set_status(self, plugin: Plugin, status: PluginStatuses):
         plugin._set_status(status)
+        self.__events.emit_future(f"{battlenode.__name__}.plugins.statuschange", status, plugin)
         self.__events.emit_future(f"{plugin.name}.statuschange", status)
 
     def _import_pl(self, plugin: Plugin):

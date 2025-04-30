@@ -1,11 +1,9 @@
 import os
-
-from pyexpat.errors import messages
-
 from ._loader import Loader
 from ._events import EventHub, EventData
 from ._config import Configurator
 from ._database import init_database, close_database
+from ._plugin_statuses import PluginStatuses
 import redis.asyncio as redis
 from loguru import logger
 import multiprocessing
@@ -46,6 +44,7 @@ class BattleNode:
         self.__events.on("battlenode.error", self.__on_event_error)
         self.__events.on("*.*", self.__on_event_all)
         self.__events.on("*.*.*", self.__on_event_all)
+        self.__events.on("battlenode.plugins.statuschange", self.__on_event_pl_statuschange)
 
     @property
     def events(self):
@@ -73,11 +72,14 @@ class BattleNode:
     def __signal_handler(self, sig, frame):
         self.__event.set()
 
+    async def __on_event_pl_statuschange(self, event: EventData, status: PluginStatuses, plugin):
+        plugin.logger.debug(f"Status {status.name}")
+
     async def __on_event_start(self, event: EventData):
-        logger.info("BattleNode Launch...")
+        logger.info("BattleNode Launch")
 
     async def __on_event_stop(self, event: EventData):
-        logger.info("Shutting down...")
+        logger.info("Shutting down")
 
     async def __on_event_error(self, event: EventData, error):
         logger.error(error)
@@ -93,14 +95,14 @@ class BattleNode:
         self.__events.emit_future(f"{battlenode.__name__}.start")
         await self.__configurator.load()
         await self.__load_config()
-        self.__rps = self.__redis.pubsub()
+        #self.__rps = self.__redis.pubsub()
         await self.__loader.init()
         await self.__loader.load_plugins()
         await self.__event.wait()
-        await self.__redis.close()
         self.__events.emit_future(f"{battlenode.__name__}.stop")
         await close_database()
         await self.__loader.shutdown_plugins()
+        await self.__redis.close()
 
     def run(self):
         signal.signal(signal.SIGINT, self.__signal_handler)

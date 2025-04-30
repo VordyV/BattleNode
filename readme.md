@@ -13,13 +13,25 @@ The full event name usually looks like this: `plugin.event`. The table below con
 ### Other events
 Events that are not related to plugins are global and are called by the application itself. Such events have the application name `battlenode` in the name instead of the plugin name
 
-| Event              | Arguments | Description                      |
-|--------------------|-----------|----------------------------------|
-| `battlenode.start` | -         | The application has started      |
-| `battlenode.stop`  | -         | The application is shutting down |
-| `battlenode.error` | str       | There was an unexpected error    |
+| Event                             | Arguments                                  | Description                                 |
+|-----------------------------------|--------------------------------------------|---------------------------------------------|
+| `battlenode.start`                | -                                          | The application has started                 |
+| `battlenode.stop`                 | -                                          | The application is shutting down            |
+| `battlenode.error`                | str                                        | There was an unexpected error               |
+| `battlenode.plugins.statuschange` | [PluginStatuses](#plugin-statuses), Plugin | one of the plug-ins has changed its status. |
 
-### Plugin Statuses
+<details>
+    <summary>Why duplicates?</summary>
+    The battlenode prefix events with the plugins group are duplicates of events whose prefixes are the plugin name, but the difference is that for battlenode an instance of the Plugin class is also passed in the arguments.
+    <details>
+        <summary>Useless information</summary>
+        Prefix.group.action, also prefix == namespace. The names are different, but maybe this info is not useless
+    </details>
+</details>
+
+---
+
+## Plugin Statuses
 | Status         | Description                                                                                |
 |----------------|--------------------------------------------------------------------------------------------|
 | `LOADED`       | Successful import and pre-initialization                                                   |

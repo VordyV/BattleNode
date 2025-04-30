@@ -45,3 +45,22 @@ Events that are not related to plugins are global and are called by the applicat
 | `WAITING`      | First status after registration in the loader. Awaiting import                             |
 
 
+___
+
+## Environment variables
+
+| Name                   | type      | Description |
+|------------------------|-----------|-------------|
+| `BN_DATABASE_HOST`     | str       |             |
+| `BN_DATABASE_PORT`     | int       |             |
+| `BN_DATABASE_USER`     | str       |             |
+| `BN_DATABASE_PASSWORD` | str       |             |
+| `BN_DATABASE_NAME`     | str       |             |
+| `BN_DATABASE_ENGINE`   | str       |             |
+| `BN_DATABASE_MINSIZE`  | int       |             |
+| `BN_DATABASE_MAXSIZE`  | int       |             |
+| `BN_DATABASE_TIMEOUT`  | int (sec) |             |
+| `BN_REDIS_HOST`        | str       |             |
+| `BN_REDIS_PORT`        | int       |             |
+| `BN_REDIS_NAME`        | int       |             |
+| `BN_REDIS_PASSWORD`    | str       |             |

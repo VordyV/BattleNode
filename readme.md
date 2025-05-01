@@ -13,12 +13,14 @@ The full event name usually looks like this: `plugin.event`. The table below con
 ### Other events
 Events that are not related to plugins are global and are called by the application itself. Such events have the application name `battlenode` in the name instead of the plugin name
 
-| Event                             | Arguments                                  | Description                                 |
-|-----------------------------------|--------------------------------------------|---------------------------------------------|
-| `battlenode.start`                | -                                          | The application has started                 |
-| `battlenode.stop`                 | -                                          | The application is shutting down            |
-| `battlenode.error`                | str                                        | There was an unexpected error               |
-| `battlenode.plugins.statuschange` | [PluginStatuses](#plugin-statuses), Plugin | one of the plug-ins has changed its status. |
+| Event                             | Arguments                                  | Description                                     |
+|-----------------------------------|--------------------------------------------|-------------------------------------------------|
+| `battlenode.start`                | -                                          | The application has started                     |
+| `battlenode.stop`                 | -                                          | The application is shutting down                |
+| `battlenode.error`                | str                                        | There was an unexpected error                   |
+| `battlenode.plugins.statuschange` | [PluginStatuses](#plugin-statuses), Plugin | one of the plug-ins has changed its status.     |
+| `battlenode.database.init`        | -                                          | Database is initialized and ready for operation |
+| `battlenode.database.close`       | -                                          | Database connection closes                      |
 
 <details>
     <summary>Why duplicates?</summary>
@@ -43,7 +45,6 @@ Events that are not related to plugins are global and are called by the applicat
 | `RESTARTING`   | During shutdown and reloading                                                              |
 | `DISABLED`     | Cannot be loaded, this action is prohibited                                                |
 | `WAITING`      | First status after registration in the loader. Awaiting import                             |
-
 
 ___
 

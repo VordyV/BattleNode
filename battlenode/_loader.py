@@ -71,6 +71,7 @@ class Loader:
         print(self.__get_apps())
 
         await init_database(self.__get_apps())
+        self.__events.emit_future(f"{battlenode.__name__}.database.init")
 
     async def shutdown_plugins(self):
         tasks = []

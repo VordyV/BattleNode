@@ -13,13 +13,7 @@ import asyncio
 import signal
 import sys
 
-class DataBaseConfig(pydantic.BaseModel):
-    engine: str = "tortoise.backends.mysql"
-    use_tz: bool = False
-    timezone: str = "UTC"
-
 class BattleNodeConfig(pydantic.BaseModel):
-    database: DataBaseConfig
     plugins: list[str]
 
 class BattleNode:
@@ -100,6 +94,7 @@ class BattleNode:
         await self.__loader.load_plugins()
         await self.__event.wait()
         self.__events.emit_future(f"{battlenode.__name__}.stop")
+        self.__events.emit_future(f"{battlenode.__name__}.database.close")
         await close_database()
         await self.__loader.shutdown_plugins()
         await self.__redis.close()

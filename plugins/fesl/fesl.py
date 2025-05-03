@@ -1,4 +1,6 @@
 from battlenode import BasePlugin, EventCollection, EventData
+from .services import AccountService, ProfileService
+import datetime
 
 class Fesl(BasePlugin):
 
@@ -11,6 +13,10 @@ class Fesl(BasePlugin):
         version = "0.1"
         dependencies = {
         }
+
+    @events.on("battlenode.database.init")
+    async def on_database_init(self, event: EventData):
+        pass
 
     @events.on("init")
     async def on_init(self, event: EventData):

@@ -1,5 +1,6 @@
 from tortoise import Tortoise
 import os
+from loguru import logger
 
 async def init_database(apps: dict):
     connection = "default"
@@ -30,8 +31,14 @@ async def init_database(apps: dict):
             "default_connection": connection
         }
 
-    await Tortoise.init(config=config)
-    await Tortoise.generate_schemas(safe=True)
+    try:
+        await Tortoise.init(config=config)
+        await Tortoise.generate_schemas(safe=True)
+    except Exception as error:
+        print(error)
 
 async def close_database():
-    await Tortoise.close_connections()
+    try:
+        await Tortoise.close_connections()
+    except Exception as error:
+        print(error)

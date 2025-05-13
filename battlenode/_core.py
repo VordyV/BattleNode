@@ -2,7 +2,7 @@ import os
 from ._loader import Loader
 from ._events import EventHub, EventData
 from ._config import Configurator
-from ._database import init_database, close_database
+from ._database import close_database
 from ._plugin_statuses import PluginStatuses
 import redis.asyncio as redis
 from loguru import logger
@@ -12,6 +12,10 @@ import pydantic
 import asyncio
 import signal
 import sys
+import logging
+
+logging.getLogger("asyncio").setLevel(logging.CRITICAL)
+logging.getLogger("asyncmy").setLevel(logging.CRITICAL)
 
 class BattleNodeConfig(pydantic.BaseModel):
     plugins: list[str]
@@ -61,7 +65,10 @@ class BattleNode:
         return self.__redis
 
     async def __on_event_all(self, event, *args):
-        await self.__redis.publish(event.name, "9")
+        try:
+            await self.__redis.publish(event.name, "9")
+        except Exception as error:
+            logger.debug(f"Error pubsub: {error}")
 
     def __signal_handler(self, sig, frame):
         self.__event.set()
@@ -85,19 +92,22 @@ class BattleNode:
             self.__events.emit_future(f"{battlenode.__name__}.error", f"configuration has not been loaded: {error}")
 
     async def __start(self):
-        self.__redis = redis.Redis(host=os.getenv("BN_REDIS_HOST"), port=int(os.getenv("BN_REDIS_PORT")), db=int(os.getenv("BN_REDIS_NAME")), password=os.getenv("BN_REDIS_PASSWORD"))
-        self.__events.emit_future(f"{battlenode.__name__}.start")
-        await self.__configurator.load()
-        await self.__load_config()
-        #self.__rps = self.__redis.pubsub()
-        await self.__loader.init()
-        await self.__loader.load_plugins()
-        await self.__event.wait()
-        self.__events.emit_future(f"{battlenode.__name__}.stop")
-        self.__events.emit_future(f"{battlenode.__name__}.database.close")
-        await close_database()
-        await self.__loader.shutdown_plugins()
-        await self.__redis.close()
+        try:
+            self.__redis = redis.Redis(host=os.getenv("BN_REDIS_HOST"), port=int(os.getenv("BN_REDIS_PORT")), db=int(os.getenv("BN_REDIS_NAME")), password=os.getenv("BN_REDIS_PASSWORD"))
+            self.__events.emit_future(f"{battlenode.__name__}.start")
+            await self.__configurator.load()
+            await self.__load_config()
+            #self.__rps = self.__redis.pubsub()
+            await self.__loader.init()
+            await self.__loader.load_plugins()
+            await self.__event.wait()
+            self.__events.emit_future(f"{battlenode.__name__}.stop")
+            self.__events.emit_future(f"{battlenode.__name__}.database.close")
+            await close_database()
+            await self.__loader.shutdown_plugins()
+            await self.__redis.close()
+        except Exception as error:
+            logger.error(error)
 
     def run(self):
         signal.signal(signal.SIGINT, self.__signal_handler)

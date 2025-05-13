@@ -14,6 +14,9 @@ class Config:
         for name, value in self.__options.items():
             setattr(self, name, value)
 
+    def dict(self):
+        return self.__options
+
     def get(self, name: str):
         return self.__options.get(name)
 

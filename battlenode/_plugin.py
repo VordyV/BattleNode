@@ -32,7 +32,6 @@ class BasePlugin(ABC):
     def logger(self):
         return self.__logger
 
-
     class Meta:
         name: str = None
         version: str = None

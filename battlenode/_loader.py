@@ -62,15 +62,13 @@ class Loader:
                 await self.__set_status(plugin, PluginStatuses.ERROR)
                 plugin.logger.exception("plugin not loaded: {error}", error=result)
 
-        await self.init_database()
+        await self.init_database(self.__get_apps())
 
     def __get_apps(self):
         return {pl.name: pl.app for pl in self.__plugins.values()}
 
-    async def init_database(self):
-        print(self.__get_apps())
-
-        await init_database(self.__get_apps())
+    async def init_database(self, apps: dict):
+        await init_database(apps)
         self.__events.emit_future(f"{battlenode.__name__}.database.init")
 
     async def shutdown_plugins(self):
@@ -224,7 +222,7 @@ class Loader:
         await self.__events.emit_async(f"{plugin.name}.init")
 
         if plugin.instance.run_as_process and plugin.instance.process_target:
-            self.__prodis.run_process(plugin.name)
+            self.__prodis.run_process(plugin.name, plugin.instance.config.dict())
 
     def __check_dependencies_pl(self, plugin: Plugin):
         for name, spec_ver in plugin.meta.dependencies.items():

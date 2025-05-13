@@ -1,6 +1,6 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_ERROR, EVENT_JOB_EXECUTED, EVENT_JOB_REMOVED
-from typing import Callable
+from typing import Callable, Any
 from enum import Enum
 from loguru import logger
 import datetime
@@ -67,10 +67,10 @@ class ProcessSupervisor:
     def add_process(self, name: str, target: Callable):
         self.__process[name] = PluginProcess(target)
 
-    def __handler_process(self, name: str):
+    def __handler_process(self, name: str, args: Any):
         pp = self.__process[name]
         queue = multiprocessing.Queue()
-        pp.process = multiprocessing.Process(target=pp.target, args=(queue,))
+        pp.process = multiprocessing.Process(target=pp.target, args=(name, *args))
         pp.status = ProcessStatuses.RUNNING
         pp.process.start()
         pp.process.join()
@@ -81,14 +81,14 @@ class ProcessSupervisor:
 
         pp.status = ProcessStatuses.STOPPED
 
-    def run_process(self, name: str):
+    def run_process(self, name: str, *args):
         if name not in self.__process: raise PSNnknownException(f"Process with this name ({name}) has not been added")
 
         pp = self.__process[name]
         if pp.process and pp.process.is_alive():
             raise PSNnknownException(f"Process {name} is already running")
 
-        self.__scheduler.add_job(self.__handler_process, "date", run_date=datetime.datetime.now(), id=name, args=(name,))
+        self.__scheduler.add_job(self.__handler_process, "date", run_date=datetime.datetime.now(), id=name, args=(name, args))
 
     def stop_process(self, name: str):
         if name not in self.__process: raise PSNnknownException(f"Process with this name ({name}) has not been added")

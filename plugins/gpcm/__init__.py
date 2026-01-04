@@ -1,4 +1,4 @@
-from .gscm import GSCM
+from .gpcm import GPCM
 import logging
 
 logging.getLogger("asyncio").setLevel(logging.CRITICAL)

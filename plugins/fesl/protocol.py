@@ -338,6 +338,8 @@ class ProtocolFesl:
 			uid = await AccountService.authorize(login=login, password=password)
 			account = await AccountService.get_info(account_id=uid)
 
+			ctx.np.debug(f"{ctx.client.address[0]}({ctx.client.address[1]}) {account.get("login")}#{uid} successfully authorized")
+
 			yield PackageFesl(
 				request_type=TypesRequests.ACCT,
 				package_type=TypesPackages.SINGLE_SERVER,
@@ -359,7 +361,8 @@ class ProtocolFesl:
 
 			ctx.client._set_account_id(uid)
 		except Exception as error:
-			print(error)
+
+			ctx.np.debug(f"{ctx.client.address[0]}({ctx.client.address[1]}) {error}")
 
 			yield PackageFesl(
 				request_type=TypesRequests.ACCT,

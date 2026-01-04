@@ -1,5 +1,6 @@
 from .package import PackageGPCM
 from .server_context import Context
+from plugins.fesl import services
 
 class ProtocolGPCM:
 
@@ -10,6 +11,8 @@ class ProtocolGPCM:
 
 	@staticmethod
 	async def getprofile_(ctx: Context):
+		#account = await services.AccountService
+
 		yield PackageGPCM([
 			("pi", ""),
 			("profileid", "1"),
@@ -51,3 +54,8 @@ class ProtocolGPCM:
 			("challenge", "0000000000"),
 			("id", "1")
 		]).deserializer()
+
+	@staticmethod
+	async def logout_(ctx: Context):
+		yield
+		return

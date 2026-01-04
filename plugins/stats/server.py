@@ -8,7 +8,7 @@ app = FastAPI()
 
 @app.get("/getbackendinfo.aspx", response_class=HTMLResponse)
 async def read_root(auth: Union[str, None]):
-	return """O
+    return """O
 H	asof	tid	serverip	cb
 D	1728996060	0	127.0.0.1	client
 H	config
@@ -188,6 +188,7 @@ awards.setData 416 "6,168, ,"
 $	8163	$
 """
 
+
 '''@app.get("/getplayerinfo.aspx", response_class=HTMLResponse)
 def read_6(auth, mode, gsa):
 	return """O
@@ -201,9 +202,10 @@ D 202 7 1564939876 1497779887
 D 108_1 0 1497785456 0
 $ 234 $"""'''
 
+
 @app.get("/getplayerinfo.aspx", response_class=HTMLResponse)
 async def read_2(auth, mode, pToken, lkey, gsa):
-	return """O
+    return """O
 H	asof	cb
 D	1728996069	client
 H	p.pid	subaccount	tid	gsco	rnk	tac	cs	tt	crpt	klstrk	bnspt	dstrk	rps	resp	tasl	tasm	awybt	hls	sasl	tds	win	los	unlc	expts	cpt	dcpt	twsc	tcd	slpts	tcrd	md	ent	ent-1	ent-2	ent-3(35)	bp-1	wtp-30	htp	hkl	atp	akl	vtp-0	vtp-1	vtp-2	vtp-3	vtp-4	vtp-5	vtp-6	vtp-7	vtp-8	vtp-9	vtp-10	vtp-11	vtp-12	vtp-13	vtp-14	vtp-15	vkls-0	vkls-1	vkls-2	vkls-3	vkls-4	vkls-5	vkls-6	vkls-7	vkls-8	vkls-9	vkls-10	vkls-11	vkls-12	vkls-13	vkls-14	vkls-15	vdstry-0	vdstry-1	vdstry-2	vdstry-3	vdstry-4	vdstry-5	vdstry-6	vdstry-7	vdstry-8	vdstry-9	vdstry-10	vdstry-11	vdstry-12	vdstry-13	vdstry-14	vdstry-15	vdths-0	vdths-1	vdths-2	vdths-3	vdths-4	vdths-5	vdths-6	vdths-7	vdths-8	vdths-9	vdths-10	vdths-11	vdths-12	vdths-13	vdths-14	vdths-15	ktt-0	ktt-1	ktt-2	ktt-3	wkls-0	wkls-1	wkls-2	wkls-3	wkls-4	wkls-5	wkls-6	wkls-7	wkls-8	wkls-9	wkls-10	wkls-11	wkls-12	wkls-13	wkls-14	wkls-15	wkls-16	wkls-17	wkls-18	wkls-19	wkls-20	wkls-21	wkls-22	wkls-23	wkls-24	wkls-25	wkls-26	wkls-27	wkls-28	wkls-29	wkls-30	wkls-31	klsk	klse	etp-0	etp-1	etp-2	etp-3	etp-4	etp-5	etp-6	etp-7	etp-8	etp-9	etp-10	etp-11	etp-12	etp-13	etp-14	etp-15	etp-16	etpk-0	etpk-1	etpk-2	etpk-3	etpk-4	etpk-5	etpk-6	etpk-7	etpk-8	etpk-9	etpk-10	etpk-11	etpk-12	etpk-13	etpk-14	etpk-15	etpk-16	attp-0	attp-1	awin-0	awin-1	tgpm-0	tgpm-1	tgpm-2	kgpm-0	kgpm-1	kgpm-2	bksgpm-0	bksgpm-1	bksgpm-2	ctgpm-0	ctgpm-1	ctgpm-2	csgpm-0	csgpm-1	csgpm-2	trpm-0	trpm-1	trpm-2	klls	attp-0	attp-1	awin-0	awin-1	pdt	mtt-0-0	mtt-0-1	mtt-0-3	mtt-0-4	mtt-0-5	mtt-0-6	mtt-0-7	mtt-0-8	mtt-0-9	mwin-0-0	mwin-0-1	mwin-0-3	mwin-0-4	mwin-0-5	mwin-0-6	mwin-0-7	mwin-0-8	mwin-0-9	mbr-0-0	mbr-0-1	mbr-0-3	mbr-0-4	mbr-0-5	mbr-0-6	mbr-0-7	mbr-0-8	mbr-0-9	mkls-0-0	mkls-0-1	mkls-0-3	mkls-0-4	mkls-0-5	mkls-0-6	mkls-0-7	mkls-0-8	mkls-0-9	mtt-1-0	mtt-1-1	mtt-1-2	mtt-1-3	mtt-1-5	mwin-1-0	mwin-1-1	mwin-1-2	mwin-1-3	mwin-1-5	mlos-1-0	mlos-1-1	mlos-1-2	mlos-1-3	mlos-1-5	mbr-1-0	mbr-1-1	mbr-1-2	mbr-1-3	mbr-1-5	msc-1-0	msc-1-1	msc-1-2	msc-1-3	msc-1-5	mkls-1-0	mkls-1-1	mkls-1-2	mkls-1-3	mkls-1-5	id	profileid	subaccount	pid	acdt	lgdt	nick	rnk	rnkcg	gsco	crpt	awaybonus	brs	cpt	capa	cts	cs	ban	ovaccu	pdt	pdtc	csgpm-0	csgpm-1	csgpm-2	dass	dcpt	kpm	dpm	spm	kdr	dstrk	dths	kkls-0	kkls-1	kkls-2	kkls-3	ktt-0	ktt-1	ktt-2	ktt-3	klla	klls	klstrk	kluav	fe	fgm	fk	fm	fv	fw	cotime	sltime	smtime	lwtime	captures	assist	defend	waccu	ate	wins	los	twsc	hls	rps	rvs	resp	sasl	slbcn	slbspn	slpts	sluav	suic	tac	talw	tas	tasl	tasm	tcd	tcrd	tdmg	tdrps	tds	tgd	tgr	tid	tkls	toth	tots	trp	tt	tvdmg	unavl	unlc	kick	ncpt	kdths-0	kdths-1	kdths-2	kdths-3	vet	etp-0	etp-1	etp-2	etp-3	etp-4	etp-5	etp-6	etp-7	etp-8	etp-9	etp-10	etp-11	etpk-0	etpk-1	etpk-2	etpk-3	etpk-4	etpk-5	etpk-6	etpk-7	etpk-8	etpk-9	etpk-10	etpk-11	gm	mapid	mbr	mwin	mlos	msc	mtt	vdstry-0	vdstry-1	vdstry-2	vdstry-3	vdstry-4	vdstry-5	vdstry-6	vdstry-7	vdstry-8	vdstry-9	vdstry-10	vdstry-11	vdstry-12	vdstry-13	vdths-0	vdths-1	vdths-2	vdths-3	vdths-4	vdths-5	vdths-6	vdths-7	vdths-8	vdths-9	vdths-10	vdths-11	vdths-12	vdths-13	vkdr-0	vkdr-1	vkdr-2	vkdr-3	vkdr-4	vkdr-5	vkdr-6	vkdr-7	vkdr-8	vkdr-9	vkdr-10	vkdr-11	vkdr-12	vkdr-13	vkls-0	vkls-1	vkls-2	vkls-3	vkls-4	vkls-5	vkls-6	vkls-7	vkls-8	vkls-9	vkls-10	vkls-11	vkls-12	vkls-13	vrkls-0	vrkls-1	vrkls-2	vrkls-3	vrkls-4	vrkls-5	vrkls-6	vrkls-7	vrkls-8	vrkls-9	vrkls-10	vrkls-11	vrkls-12	vrkls-13	vtp-0	vtp-1	vtp-2	vtp-3	vtp-4	vtp-5	vtp-6	vtp-7	vtp-8	vtp-9	vtp-10	vtp-11	vtp-12	vtp-13	vbf-0	vbf-1	vbf-2	vbf-3	vbf-4	vbf-5	vbf-6	vbf-7	vbf-8	vbf-9	vbf-10	vbf-11	vbf-12	vbf-13	vbh-0	vbh-1	vbh-2	vbh-3	vbh-4	vbh-5	vbh-6	vbh-7	vbh-8	vbh-9	vbh-10	vbh-11	vbh-12	vbh-13	vaccu-0	vaccu-1	vaccu-2	vaccu-3	vaccu-4	vaccu-5	vaccu-6	vaccu-7	vaccu-8	vaccu-9	vaccu-10	vaccu-11	vaccu-12	vaccu-13	waccu-0	waccu-1	waccu-2	waccu-3	waccu-4	waccu-5	waccu-6	waccu-7	waccu-8	waccu-9	waccu-10	waccu-11	waccu-12	waccu-13	waccu-14	waccu-15	waccu-16	waccu-17	waccu-18	waccu-19	waccu-20	waccu-21	waccu-22	waccu-23	waccu-24	waccu-25	waccu-26	waccu-27	waccu-28	waccu-29	waccu-30	waccu-31	waccu-32	waccu-33	waccu-34	waccu-35	waccu-36	waccu-37	waccu-38	waccu-39	waccu-40	waccu-41	waccu-42	wdths-0	wdths-1	wdths-2	wdths-3	wdths-4	wdths-5	wdths-6	wdths-7	wdths-8	wdths-9	wdths-10	wdths-11	wdths-12	wdths-13	wdths-14	wdths-15	wdths-16	wdths-17	wdths-18	wdths-19	wdths-20	wdths-21	wdths-22	wdths-23	wdths-24	wdths-25	wdths-26	wdths-27	wdths-28	wdths-29	wdths-30	wdths-31	wdths-32	wdths-33	wdths-34	wdths-35	wdths-36	wdths-37	wdths-38	wdths-39	wdths-40	wdths-41	wdths-42	whts-0	whts-1	whts-2	whts-3	whts-4	whts-5	whts-6	whts-7	whts-8	whts-9	whts-10	whts-11	whts-12	whts-13	whts-14	whts-15	whts-16	whts-17	whts-18	whts-19	whts-20	whts-21	whts-22	whts-23	whts-24	whts-25	whts-26	whts-27	whts-28	whts-29	whts-30	whts-31	whts-32	whts-33	whts-34	whts-35	whts-36	whts-37	whts-38	whts-39	whts-40	whts-41	whts-42	wkdr-0	wkdr-1	wkdr-2	wkdr-3	wkdr-4	wkdr-5	wkdr-6	wkdr-7	wkdr-8	wkdr-9	wkdr-10	wkdr-11	wkdr-12	wkdr-13	wkdr-14	wkdr-15	wkdr-16	wkdr-17	wkdr-18	wkdr-19	wkdr-20	wkdr-21	wkdr-22	wkdr-23	wkdr-24	wkdr-25	wkdr-26	wkdr-27	wkdr-28	wkdr-29	wkdr-30	wkdr-31	wkdr-32	wkdr-33	wkdr-34	wkdr-35	wkdr-36	wkdr-37	wkdr-38	wkdr-39	wkdr-40	wkdr-41	wkdr-42	wkls-0	wkls-1	wkls-2	wkls-3	wkls-4	wkls-5	wkls-6	wkls-7	wkls-8	wkls-9	wkls-10	wkls-11	wkls-12	wkls-13	wkls-14	wkls-15	wkls-16	wkls-17	wkls-18	wkls-19	wkls-20	wkls-21	wkls-22	wkls-23	wkls-24	wkls-25	wkls-26	wkls-27	wkls-28	wkls-29	wkls-30	wkls-31	wkls-32	wkls-33	wkls-34	wkls-35	wkls-36	wkls-37	wkls-38	wkls-39	wkls-40	wkls-41	wkls-42	wshts-0	wshts-1	wshts-2	wshts-3	wshts-4	wshts-5	wshts-6	wshts-7	wshts-8	wshts-9	wshts-10	wshts-11	wshts-12	wshts-13	wshts-14	wshts-15	wshts-16	wshts-17	wshts-18	wshts-19	wshts-20	wshts-21	wshts-22	wshts-23	wshts-24	wshts-25	wshts-26	wshts-27	wshts-28	wshts-29	wshts-30	wshts-31	wshts-32	wshts-33	wshts-34	wshts-35	wshts-36	wshts-37	wshts-38	wshts-39	wshts-40	wshts-41	wshts-42	wtp-0	wtp-1	wtp-2	wtp-3	wtp-4	wtp-5	wtp-6	wtp-7	wtp-8	wtp-9	wtp-10	wtp-11	wtp-12	wtp-13	wtp-14	wtp-15	wtp-16	wtp-17	wtp-18	wtp-19	wtp-20	wtp-21	wtp-22	wtp-23	wtp-24	wtp-25	wtp-26	wtp-27	wtp-28	wtp-29	wtp-30	wtp-31	wtp-32	wtp-33	wtp-34	wtp-35	wtp-36	wtp-37	wtp-38	wtp-39	wtp-40	wtp-41	wtp-42	wtpk-0	wtpk-1	wtpk-2	wtpk-3	wtpk-4	wtpk-5	wtpk-6	wtpk-7	wtpk-8	wtpk-9	wtpk-10	wtpk-11	wtpk-12	wtpk-13	wtpk-14	wtpk-15	wtpk-16	wtpk-17	wtpk-18	wtpk-19	wtpk-20	wtpk-21	wtpk-22	wtpk-23	wtpk-24	wtpk-25	wtpk-26	wtpk-27	wtpk-28	wtpk-29	wtpk-30	wtpk-31	wtpk-32	wtpk-33	wtpk-34	wtpk-35	wtpk-36	wtpk-37	wtpk-38	wtpk-39	wtpk-40	wtpk-41	wtpk-42	wbf-0	wbf-1	wbf-2	wbf-3	wbf-4	wbf-5	wbf-6	wbf-7	wbf-8	wbf-9	wbf-10	wbf-11	wbf-12	wbf-13	wbf-14	wbf-15	wbf-16	wbf-17	wbf-18	wbf-19	wbf-20	wbf-21	wbf-22	wbf-23	wbf-24	wbf-25	wbf-26	wbf-27	wbf-28	wbf-29	wbf-30	wbf-31	wbf-32	wbf-33	wbf-34	wbf-35	wbf-36	wbf-37	wbf-38	wbf-39	wbf-40	wbf-41	wbf-42	wbh-0	wbh-1	wbh-2	wbh-3	wbh-4	wbh-5	wbh-6	wbh-7	wbh-8	wbh-9	wbh-10	wbh-11	wbh-12	wbh-13	wbh-14	wbh-15	wbh-16	wbh-17	wbh-18	wbh-19	wbh-20	wbh-21	wbh-22	wbh-23	wbh-24	wbh-25	wbh-26	wbh-27	wbh-28	wbh-29	wbh-30	wbh-31	wbh-32	wbh-33	wbh-34	wbh-35	wbh-36	wbh-37	wbh-38	wbh-39	wbh-40	wbh-41	wbh-42	adpr	wlr	vaccu-14	vaccu-15	bp-1
@@ -213,9 +215,10 @@ D	121
 $	7267	$
 """
 
+
 @app.get("/getunlocksinfo.aspx", response_class=HTMLResponse)
 async def read_3(auth):
-	return """O
+    return """O
 H	pid	nick	asof
 D	1	ServerAdmin	1728996071
 H	Avcred
@@ -225,9 +228,10 @@ D	121
 $	58	$
 """
 
+
 @app.get("/getawardsinfo.aspx", response_class=HTMLResponse)
 async def read_4(auth):
-	return """O
+    return """O
 H	pid	nick	asof
 D	1	ServerAdmin	1728996071
 H	award	level	when	first
@@ -241,9 +245,10 @@ D	119_1	0	1538226794	0
 $	211	$
 """
 
+
 @app.get("/BF2142ticker/Russian.xml", response_class=HTMLResponse)
 async def read_5():
-	i = """
+    i = """
 
 <?xml version="1.0" encoding="UTF-8"?>
 <newsticker>
@@ -257,15 +262,18 @@ async def read_5():
 	[2022.07.21] Демки можно качать из игры. Меню Сообщество\Ролики. Подробнее: vk.com/novgames_2142.
 	</newsitem>
 </newsticker>"""
-	return Response(content=i, media_type="application/xml")
+    return Response(content=i, media_type="application/xml")
+
 
 async def handler(config):
     # manually specify only what is necessary for work
     #await init_database(apps={"fesl": ["plugins.fesl.models"]})
-    config = uvicorn.Config(app, host=config.get("server_address"), port=config.get("server_port"), log_level="critical")
+    config = uvicorn.Config(app, host=config.get("server_address"), port=config.get("server_port"),
+                            log_level="critical")
     server = uvicorn.Server(config)
     await server.serve()
     #await asyncio.Event().wait()
+
 
 def main(queue, config):
     try:

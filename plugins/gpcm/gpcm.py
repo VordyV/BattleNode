@@ -2,7 +2,7 @@ from battlenode import BasePlugin, EventCollection, EventData
 from .server import main
 import pydantic
 
-class GSCM(BasePlugin):
+class GPCM(BasePlugin):
 
     events = EventCollection()
     #app = ["plugins.fesl.models"]

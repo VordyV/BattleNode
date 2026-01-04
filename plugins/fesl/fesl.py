@@ -12,6 +12,7 @@ class Fesl(BasePlugin):
     run_as_process = True
 
     class Config(pydantic.BaseModel):
+        port: int = 18400
         domainPartition_domain: str = "eagames"
         messengerIp: str = "0.0.0.0"
         messengerPort: int = 0
@@ -21,7 +22,7 @@ class Fesl(BasePlugin):
         theaterPort: int = 0
         tos: str = "<body>Whether you chose it or it was chosen for you, it is the best city left.<br>I think so highly of City 17 that I have chosen to house my government here, in the Citadel so carefully provided by our Protectors.<br><br>I am proud to call City 17 my home.<br>Русский текст</body>"
         countries: dict[str, CountryCodeField] = {"AU": "Country", "NZ": "Country2"}
-        proxy: bool = True
+        proxy: bool = False
 
     class Meta(BasePlugin.Meta):
         name = "Fesl"

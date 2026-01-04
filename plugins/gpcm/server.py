@@ -18,7 +18,7 @@ class EchoServer(TCPServer):
         # client_proxy = await stream.read_bytes(8, partial=True)
         # print("client_proxy", client_proxy)
         client = Client(stream, address)
-        print(client)
+        #print(client)
         self._clients.append(client)
 
 

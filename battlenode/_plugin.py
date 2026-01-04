@@ -40,7 +40,7 @@ class BasePlugin(ABC):
 
 class Plugin:
 
-    def __init__(self, name: str, module: object = None, instance: object = None):
+    def __init__(self, name: str, module: object = None, instance: BasePlugin | None = None):
         self.__name = name
         self.__module = module
         self.__instance = instance

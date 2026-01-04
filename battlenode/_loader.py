@@ -212,7 +212,7 @@ class Loader:
             else: self.__events.on(f"{plugin.name}.{e["event"]}", getattr(instance, e["func"]))
 
         if cls.run_as_process and cls.process_target:
-            self.__prodis.add_process(plugin.name, cls.process_target)
+            self.__prodis.add_process(plugin.name, cls.process_target, plugin.logger)
 
     async def _init_pl(self, plugin: Plugin):
         spec_ver_pl = packaging.specifiers.SpecifierSet(plugin.meta.requires_battlenode)

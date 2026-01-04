@@ -2,11 +2,11 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_ERROR, EVENT_JOB_EXECUTED, EVENT_JOB_REMOVED
 from typing import Callable, Any
 from enum import Enum
-from loguru import logger
 import datetime
 import multiprocessing
 import logging
 import asyncio
+import queue
 
 class PSNnknownException(Exception): pass
 class PSException(Exception): pass
@@ -18,8 +18,9 @@ class ProcessStatuses(Enum):
 
 class PluginProcess:
 
-    def __init__(self, target: Callable):
+    def __init__(self, target: Callable, logger):
         self.target = target
+        self.logger = logger
         self.status: ProcessStatuses = ProcessStatuses.STOPPED
         self.process: multiprocessing.Process | None = None
 
@@ -64,20 +65,30 @@ class ProcessSupervisor:
     async def init(self):
         self.__scheduler.start()
 
-    def add_process(self, name: str, target: Callable):
-        self.__process[name] = PluginProcess(target)
+    def add_process(self, name: str, target: Callable, logger):
+        self.__process[name] = PluginProcess(target, logger)
 
     def __handler_process(self, name: str, args: Any):
         pp = self.__process[name]
-        queue = multiprocessing.Queue()
-        pp.process = multiprocessing.Process(target=pp.target, args=(name, *args))
+        p_queue = multiprocessing.Queue()
+        pp.process = multiprocessing.Process(target=pp.target, args=(p_queue, *args))
         pp.status = ProcessStatuses.RUNNING
         pp.process.start()
+
+        while pp.process.is_alive():
+            try:
+                msg = p_queue.get(timeout=0.5)
+                if msg[0] == "debug": pp.logger.debug(msg[1])
+                elif msg[0] == "info": pp.logger.info(msg[1])
+                elif msg[0] == "error": pp.logger.error(msg[1])
+                elif msg[0] == "warning": pp.logger.warning(msg[1])
+            except queue.Empty: pass
+
         pp.process.join()
 
-        if not queue.empty():
-            error = queue.get()
-            raise PSException(f"{error} (exitcode: {pp.process.exitcode})")
+        #if not queue.empty():
+        #    error = queue.get()
+        #    raise PSException(f"{error} (exitcode: {pp.process.exitcode})")
 
         pp.status = ProcessStatuses.STOPPED
 

@@ -6,6 +6,7 @@ from ._database import close_database
 from ._plugin_statuses import PluginStatuses
 import redis.asyncio as redis
 from loguru import logger
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import multiprocessing
 import battlenode
 import pydantic
@@ -32,6 +33,7 @@ class BattleNode:
         self.__config = None
         self.__loader = Loader(folder=self.__plugin_folder, battlenode=self)
         self.__event = asyncio.Event()
+        self.__scheduler = AsyncIOScheduler()
 
         logger.remove()
         logger.add(sys.stdout, colorize=True, enqueue=True, format="<green>{time:HH:mm:ss}</green> <level>{message}</level>", filter=lambda record: "plugin" not in record["extra"])
@@ -63,6 +65,10 @@ class BattleNode:
     @property
     def redis(self):
         return self.__redis
+
+    @property
+    def scheduler(self) -> AsyncIOScheduler:
+        return self.__scheduler
 
     async def __on_event_all(self, event, *args):
         try:
@@ -100,12 +106,14 @@ class BattleNode:
             #self.__rps = self.__redis.pubsub()
             await self.__loader.init()
             await self.__loader.load_plugins()
+            self.__scheduler.start()
             await self.__event.wait()
             self.__events.emit_future(f"{battlenode.__name__}.stop")
             self.__events.emit_future(f"{battlenode.__name__}.database.close")
             await close_database()
-            await self.__loader.shutdown_plugins()
             await self.__redis.close()
+            await self.__loader.shutdown_plugins()
+            self.__scheduler.shutdown()
         except Exception as error:
             logger.error(error)
 

@@ -2,6 +2,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_ERROR, EVENT_JOB_EXECUTED, EVENT_JOB_REMOVED
 from typing import Callable, Any
 from enum import Enum
+from ._plugin import Plugin
 import datetime
 import multiprocessing
 import logging
@@ -18,9 +19,9 @@ class ProcessStatuses(Enum):
 
 class PluginProcess:
 
-    def __init__(self, target: Callable, logger):
+    def __init__(self, target: Callable, plugin: Plugin):
         self.target = target
-        self.logger = logger
+        self.plugin = plugin
         self.status: ProcessStatuses = ProcessStatuses.STOPPED
         self.process: multiprocessing.Process | None = None
 
@@ -65,12 +66,12 @@ class ProcessSupervisor:
     async def init(self):
         self.__scheduler.start()
 
-    def add_process(self, name: str, target: Callable, logger):
-        self.__process[name] = PluginProcess(target, logger)
+    def add_process(self, plugin: Plugin, target: Callable):
+        self.__process[plugin.name] = PluginProcess(target, plugin)
 
     def __handler_process(self, name: str, args: Any):
         pp = self.__process[name]
-        p_queue = multiprocessing.Queue()
+        p_queue = multiprocessing.Queue(maxsize=10)
         pp.process = multiprocessing.Process(target=pp.target, args=(p_queue, *args))
         pp.status = ProcessStatuses.RUNNING
         pp.process.start()
@@ -78,10 +79,10 @@ class ProcessSupervisor:
         while pp.process.is_alive():
             try:
                 msg = p_queue.get(timeout=0.5)
-                if msg[0] == "debug": pp.logger.debug(msg[1])
-                elif msg[0] == "info": pp.logger.info(msg[1])
-                elif msg[0] == "error": pp.logger.error(msg[1])
-                elif msg[0] == "warning": pp.logger.warning(msg[1])
+                if msg[0] == "debug": pp.plugin.logger.debug(msg[1])
+                elif msg[0] == "info": pp.plugin.logger.info(msg[1])
+                elif msg[0] == "error": pp.plugin.logger.error(msg[1])
+                elif msg[0] == "warning": pp.plugin.logger.warning(msg[1])
             except queue.Empty: pass
 
         pp.process.join()

@@ -4,6 +4,8 @@ from ._config import Config as Configure
 from abc import ABC
 from loguru import logger
 from typing import Union, Callable, Optional
+from ._shared_data import SharedData
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import battlenode
 import pydantic
 
@@ -15,22 +17,32 @@ class BasePlugin(ABC):
     process_target: Optional[Callable] = None
     run_as_process: Optional[bool] = False
 
-    def __init__(self, battlenode, config: Configure, logger):
+    def __init__(self, battlenode, config: Configure, logger, shared_data: SharedData, scheduler: AsyncIOScheduler):
         self.__battlenode = battlenode
         self.__config = config
         self.__logger = logger
+        self.__shared_data = shared_data
+        self.__scheduler = scheduler
 
     @property
     def battlenode(self):
         return self.__battlenode
 
     @property
-    def config(self):
+    def config(self) -> Configure:
         return self.__config
 
     @property
     def logger(self):
         return self.__logger
+
+    @property
+    def shared_data(self) -> SharedData:
+        return self.__shared_data
+
+    @property
+    def scheduler(self) -> AsyncIOScheduler:
+        return self.__scheduler
 
     class Meta:
         name: str = None

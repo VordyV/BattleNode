@@ -10,6 +10,7 @@ from ._plugin_statuses import PluginStatuses
 from ._events import EventHub, EventCollection
 from ._database import init_database, close_database
 from ._process import ProcessSupervisor
+from ._shared_data import SharedData
 import inspect
 import packaging.version
 import packaging.specifiers
@@ -60,7 +61,8 @@ class Loader:
         for plugin, result in zip(self.__plugins.values(), results):
             if isinstance(result, Exception):
                 await self.__set_status(plugin, PluginStatuses.ERROR)
-                plugin.logger.exception("plugin not loaded: {error}", error=result)
+                tb = ''.join(traceback.format_exception(type(result), result, result.__traceback__))
+                plugin.logger.exception("plugin not loaded: {error}\n{tb}", error=result, tb=tb)
 
         await self.init_database(self.__get_apps())
 
@@ -82,7 +84,8 @@ class Loader:
         for plugin, result in zip(self.__plugins.values(), results):
             if isinstance(result, Exception):
                 await self.__set_status(plugin, PluginStatuses.ERROR)
-                plugin.logger.exception("plugin didn't shut down properly: {error}", error=result)
+                tb = ''.join(traceback.format_exception(type(result), result, result.__traceback__))
+                plugin.logger.exception("plugin didn't shut down properly: {error}\n{tb}", error=result, tb=tb)
                 #print("SHUTDOWN ERROR", plugin.name, result)
 
         await close_database()
@@ -196,7 +199,7 @@ class Loader:
         if cls.Config and issubclass(cls.Config, pydantic.BaseModel):
             config = self.__battlenode.configurator.get_section(plugin.name, cls.Config)
 
-        instance = cls(self.__battlenode, config, plugin.logger)
+        instance = cls(self.__battlenode, config, plugin.logger, SharedData(self.__battlenode.redis, plugin.name), self.__battlenode.scheduler)
 
         if instance is None or not isinstance(instance, EventCollection): LoaderNoEventInstException(f"Plugin {plugin.name} does not contain an instance of the Events class")
         #"minsize": app.get("minsize", os.getenv("BN_DATABASE_MINSIZE")),
@@ -212,7 +215,7 @@ class Loader:
             else: self.__events.on(f"{plugin.name}.{e["event"]}", getattr(instance, e["func"]))
 
         if cls.run_as_process and cls.process_target:
-            self.__prodis.add_process(plugin.name, cls.process_target, plugin.logger)
+            self.__prodis.add_process(plugin, cls.process_target)
 
     async def _init_pl(self, plugin: Plugin):
         spec_ver_pl = packaging.specifiers.SpecifierSet(plugin.meta.requires_battlenode)

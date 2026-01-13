@@ -80,6 +80,6 @@ async def handler(np: NewProcess):
 
 def main(queue, config):
     try:
-        asyncio.run(handler(NewProcess(queue=queue, app_config=config)))
+        asyncio.run(handler(NewProcess(queue=queue, app_config=config, app_name="fesl")))
     except Exception as e:
         queue.put(e)

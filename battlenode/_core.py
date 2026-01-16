@@ -7,6 +7,7 @@ from ._plugin_statuses import PluginStatuses
 import redis.asyncio as redis
 from loguru import logger
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from ._plugin_proxy import PluginProxy
 import multiprocessing
 import battlenode
 import pydantic
@@ -121,4 +122,8 @@ class BattleNode:
         signal.signal(signal.SIGINT, self.__signal_handler)
         signal.signal(signal.SIGTERM, self.__signal_handler)
         asyncio.run(self.__start())
+
+    def get_plugin(self, name: str) -> PluginProxy:
+        plugin = self.loader.get_plugin(name=name)
+        return PluginProxy(plugin=plugin)
 

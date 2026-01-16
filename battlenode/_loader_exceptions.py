@@ -6,3 +6,4 @@ class LoaderReLoadPluginException(Exception): pass
 class LoaderNoEventInstException(Exception): pass
 class LoaderShutNonWorkException(Exception): pass
 class LoaderDisableModuleException(Exception): pass
+class LoaderPluginNotExistsException(Exception): pass

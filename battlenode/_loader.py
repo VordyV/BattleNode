@@ -30,6 +30,11 @@ class Loader:
             on_error=self._on_event_prodis_error
         )
 
+    def get_plugin(self, name: str) -> Plugin:
+        if name not in self.__plugins: raise LoaderPluginNotExistsException(f"Plugin '{name}' not found")
+        plugin = self.__plugins[name]
+        return plugin
+
     async def _on_event_prodis_submitted(self, event):
         self.__events.emit_future(f"{event.job_id}.process.submitted", event)
 
@@ -124,6 +129,7 @@ class Loader:
             await self.__set_status(plugin, PluginStatuses.INITIALIZING)
             await self._init_pl(plugin)
             await self.__set_status(plugin, PluginStatuses.RUNNING)
+            await self.__events.emit_async(f"{plugin.name}.init")
         except:
             await self.__set_status(plugin, PluginStatuses.ERROR)
             raise
@@ -180,6 +186,8 @@ class Loader:
         spec = importlib.util.find_spec(path)
         module = importlib.util.module_from_spec(spec)
         sys.modules[path] = module
+        dirname = os.path.dirname(spec.origin)
+        if dirname not in sys.path: sys.path.append(dirname)
         spec.loader.exec_module(module)
 
         self._pre_init_pl(plugin, module)
@@ -222,7 +230,6 @@ class Loader:
         ver_bn = packaging.version.parse(battlenode.__version__)
         if ver_bn not in spec_ver_pl: raise LoaderInvalidVerSpecException(f"Plugin {plugin.name} cannot run on this version {battlenode.__version__}. Possible versions: {plugin.meta.requires_battlenode}")
         self.__check_dependencies_pl(plugin)
-        await self.__events.emit_async(f"{plugin.name}.init")
 
         if plugin.instance.run_as_process and plugin.instance.process_target:
             self.__prodis.run_process(plugin.name, plugin.instance.config.dict())

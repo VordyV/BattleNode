@@ -32,17 +32,20 @@ jobs:
 
       - name: Build Executable
         run: |
-          poetry run python -m nuitka main.py
+          poetry run python -m nuitka main.py --output-dir=dist
+
+      - name: Debug files
+        run: |
+          echo "PWD:"
+          pwd
+          echo "Files:"
+          ls -la
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }} Build
-          path: |
-            build/*.exe
-            build/*.bin
-            build/*.app/**/*
-            build/*.dist/**/*
+          path: dist/**
           include-hidden-files: true
 
       

@@ -34,13 +34,6 @@ jobs:
         run: |
           poetry run python -m nuitka main.py --output-dir=dist
 
-      - name: Debug files
-        run: |
-          echo "PWD:"
-          pwd
-          echo "Files:"
-          ls -la
-
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:

@@ -52,8 +52,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}
           generate_release_notes: true
           preserve_order: true
           overwrite_files: true

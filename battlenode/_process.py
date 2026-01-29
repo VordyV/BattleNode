@@ -52,12 +52,16 @@ class ProcessSupervisor:
         asyncio.create_task(self._handle_event_executes(event))
 
     async def _handle_event_executes(self, event):
+        pp = self.__process[event.job_id]
+        pp.status = ProcessStatuses.STOPPED
         if callable(self._on_executes): await self._on_executes(event)
 
     def __on_event_error(self, event):
         asyncio.create_task(self._handle_event_error(event))
 
     async def _handle_event_error(self, event):
+        pp = self.__process[event.job_id]
+        pp.status = ProcessStatuses.STOPPED
         if callable(self._on_error): await self._on_error(event)
 
     def __on_event_removed(self, event):
@@ -65,6 +69,9 @@ class ProcessSupervisor:
 
     async def init(self):
         self.__scheduler.start()
+
+    async def shutdown(self):
+        self.__scheduler.shutdown()
 
     def add_process(self, plugin: Plugin, target: Callable):
         self.__process[plugin.name] = PluginProcess(target, plugin)
@@ -79,6 +86,7 @@ class ProcessSupervisor:
         while pp.process.is_alive():
             try:
                 msg = p_queue.get(timeout=0.5)
+                if isinstance(msg, Exception): raise PSException(str(msg))
                 if msg[0] == "debug": pp.plugin.logger.debug(msg[1])
                 elif msg[0] == "info": pp.plugin.logger.info(msg[1])
                 elif msg[0] == "error": pp.plugin.logger.error(msg[1])
@@ -86,12 +94,9 @@ class ProcessSupervisor:
             except queue.Empty: pass
 
         pp.process.join()
-
         #if not queue.empty():
         #    error = queue.get()
         #    raise PSException(f"{error} (exitcode: {pp.process.exitcode})")
-
-        pp.status = ProcessStatuses.STOPPED
 
     def run_process(self, name: str, *args):
         if name not in self.__process: raise PSNnknownException(f"Process with this name ({name}) has not been added")

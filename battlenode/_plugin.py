@@ -8,6 +8,7 @@ from ._shared_data import SharedData
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import battlenode
 import pydantic
+from ._commands import CommandCollection
 
 class BasePlugin(ABC):
 
@@ -16,6 +17,7 @@ class BasePlugin(ABC):
     app: Optional[list[str]] = []
     process_target: Optional[Callable] = None
     run_as_process: Optional[bool] = False
+    commands: CommandCollection = None
 
     def __init__(self, battlenode, config: Configure, logger, shared_data: SharedData, scheduler: AsyncIOScheduler):
         self.__battlenode = battlenode
@@ -60,6 +62,7 @@ class Plugin:
         self.__meta: BasePlugin.Meta = None
         self.__logger = logger.bind(plugin=self.__name)
         self.__app: dict = {}
+        self.__exitcode: str | None = None
 
     @property
     def instance(self):
@@ -89,6 +92,10 @@ class Plugin:
     def app(self):
         return self.__app
 
+    @property
+    def exitcode(self):
+        return self.__exitcode
+
     def _set_instance(self, instance: BasePlugin):
         self.__instance = instance
         self.__meta = instance.Meta
@@ -103,3 +110,9 @@ class Plugin:
 
     def _set_app(self, app: dict):
         self.__app = app
+
+    def _del_instance(self):
+        self.__instance = None
+
+    def _set_exitcode(self, value: str | None):
+        self.__exitcode = value

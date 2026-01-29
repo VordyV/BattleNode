@@ -9,6 +9,7 @@ from .server_client import Client
 from .server_context import Context
 from cryptography.fernet import InvalidToken
 import datetime
+import functools
 
 account_field_errors = {
 	"login": "Account.ScreenName",
@@ -19,13 +20,55 @@ account_field_errors = {
 	"zip_code": "Account.BirthDate"
 }
 
+def txn(auth: bool = False):
+
+	def decorator(func):
+
+		@functools.wraps(func)
+		async def wrapper(ctx: Context):
+			if auth and not ctx.client.is_authenticated:
+				yield PackageFesl(
+					request_type=ctx.pkg.request_type,
+					package_type=ctx.pkg.package_type,
+					number=ctx.pkg.number,
+					options={
+						"TXN": ctx.pkg.options.get("TXN"),
+						"errorCode": 182,
+						"localizedMessage": "Client is not authorized",
+						"errorContainer.[]": 0,
+					}
+				).deserializer()
+				return
+
+			try:
+				async for pkg in func(ctx):
+					yield pkg
+
+			except Exception as exc:
+				ctx.np.debug(f"{exc}")
+
+				yield PackageFesl(
+					request_type=ctx.pkg.request_type,
+					package_type=ctx.pkg.package_type,
+					number=ctx.pkg.number,
+					options={
+						"TXN": ctx.pkg.options.get("TXN"),
+						"errorCode": 182,
+						"localizedMessage": "Something happened, but it's unclear what",
+						"errorContainer.[]": 0,
+					}
+				).deserializer()
+
+		return wrapper
+
+	return decorator
+
 class ProtocolFesl:
 
-	ei = EncryptedInfo()
-
 	@staticmethod
+	@txn()
 	async def Hello(ctx: Context):
-		config = ctx.app_config
+		config = ctx.config
 
 		now_utc = datetime.datetime.now(datetime.UTC)
 		formatted_time = now_utc.strftime("%b-%d-%Y %H:%M:%S UTC")
@@ -61,11 +104,13 @@ class ProtocolFesl:
 		).deserializer()
 
 	@staticmethod
+	@txn()
 	async def MemCheck(ctx: Context):
 		return
 		yield
 
 	@staticmethod
+	@txn()
 	async def GameSpyPreAuth(ctx: Context):
 		yield PackageFesl(
 			request_type=TypesRequests.ACCT,
@@ -79,6 +124,7 @@ class ProtocolFesl:
 		).deserializer()
 
 	@staticmethod
+	@txn(auth=True)
 	async def GetAccount(ctx: Context):
 		data = await AccountService.get_info(ctx.client.account_id)
 		yield PackageFesl(
@@ -92,7 +138,7 @@ class ProtocolFesl:
 				"userId": data.get("id"),
 				"email": data.get("email"),
 				"countryCode": data.get("country_code"),
-				"countryDesc": ctx.app_config.get("countries").get(data.get("country_code")),
+				"countryDesc": ctx.config.get("countries").get(data.get("country_code")),
 				"dobDay": data.get("date_of_birth").day,
 				"dobMonth": data.get("date_of_birth").month,
 				"dobYear": data.get("date_of_birth").year,
@@ -104,6 +150,7 @@ class ProtocolFesl:
 		).deserializer()
 
 	@staticmethod
+	@txn(auth=True)
 	async def LoginSubAccount(ctx: Context):
 		profile = await ProfileService.get_for_name(name=ctx.pkg.options.get("name"))
 
@@ -136,6 +183,7 @@ class ProtocolFesl:
 			).deserializer()
 
 	@staticmethod
+	@txn(auth=True)
 	async def GetSubAccounts(ctx: Context):
 		num = 0
 
@@ -159,6 +207,7 @@ class ProtocolFesl:
 		).deserializer()
 
 	@staticmethod
+	@txn()
 	async def GetObjectInventory(ctx: Context):
 		yield PackageFesl(
 			request_type=TypesRequests.DOBJ,
@@ -171,6 +220,7 @@ class ProtocolFesl:
 		).deserializer()
 
 	@staticmethod
+	@txn()
 	async def GetEntitlementByBundle(ctx: Context):
 		yield PackageFesl(
 			request_type=TypesRequests.SUBS,
@@ -196,13 +246,15 @@ class ProtocolFesl:
 		).deserializer()
 
 	@staticmethod
+	@txn()
 	async def Ping(ctx: Context):
 		return
 		yield
 
 	@staticmethod
+	@txn()
 	async def GetTos(ctx: Context):
-		config = ctx.app_config
+		config = ctx.config
 		yield PackageFesl(
 			request_type=TypesRequests.ACCT,
 			package_type=TypesPackages.SINGLE_SERVER,
@@ -214,6 +266,7 @@ class ProtocolFesl:
 		).deserializer()
 
 	@staticmethod
+	@txn()
 	async def AddAccount(ctx: Context):
 		try:
 			uid = await AccountService.create(
@@ -272,6 +325,7 @@ class ProtocolFesl:
 			).deserializer()
 
 	@staticmethod
+	@txn()
 	async def SendAccountName(ctx: Context):
 		yield PackageFesl(
 			request_type=TypesRequests.ACCT,
@@ -283,6 +337,7 @@ class ProtocolFesl:
 		).deserializer()
 
 	@staticmethod
+	@txn()
 	async def SendAccountPassword(ctx: Context):
 		yield PackageFesl(
 			request_type=TypesRequests.ACCT,
@@ -294,6 +349,7 @@ class ProtocolFesl:
 		).deserializer()
 
 	@staticmethod
+	@txn()
 	async def RegisterGame(ctx: Context):
 		yield PackageFesl(
 			request_type=TypesRequests.ACCT,
@@ -305,12 +361,13 @@ class ProtocolFesl:
 		).deserializer()
 
 	@staticmethod
+	@txn()
 	async def GetCountryList(ctx: Context):
 		options = {
 			"TXN": "GetCountryList",
 		}
 		num = 0
-		for code, name in ctx.app_config.get("countries", {}).items():
+		for code, name in ctx.config.get("countries", {}).items():
 			options[f"countryList.{num}.description"] = name
 			options[f"countryList.{num}.ISOCode"] = code
 			num += 1
@@ -323,17 +380,18 @@ class ProtocolFesl:
 		).deserializer()
 
 	@staticmethod
+	@txn()
 	async def Login(ctx: Context):
 		#print(pkg.options)
 
 		try:
 			if ctx.pkg.options.get("encryptedInfo"):
 				token = ctx.pkg.options.get("encryptedInfo")
-				login, password = await asyncio.to_thread(ProtocolFesl.ei.decode_token, token)
+				login, password = await asyncio.to_thread(EncryptedInfo(ctx.config.get("key")).decode_token, token)
 			else:
 				login = str(ctx.pkg.options.get("name"))
 				password = str(ctx.pkg.options.get("password"))
-				token = await asyncio.to_thread(ProtocolFesl.ei.encode_token,login, password)
+				token = await asyncio.to_thread(EncryptedInfo(ctx.config.get("key")).encode_token,login, password)
 
 			uid = await AccountService.authorize(login=login, password=password)
 			account = await AccountService.get_info(account_id=uid)
@@ -377,6 +435,7 @@ class ProtocolFesl:
 			).deserializer()
 
 	@staticmethod
+	@txn(auth=True)
 	async def AddSubAccount(ctx: Context):
 		try:
 			#uid = AccountService.get_by_login(ctx.pkg.options.get("name"))
@@ -393,7 +452,6 @@ class ProtocolFesl:
 				}
 			).deserializer()
 		except PSDuplicateException as error:
-			print(error)
 			yield PackageFesl(
 				request_type=TypesRequests.ACCT,
 				package_type=TypesPackages.SINGLE_SERVER,
@@ -407,11 +465,12 @@ class ProtocolFesl:
 			).deserializer()
 
 	@staticmethod
+	@txn()
 	async def DisableSubAccount(ctx: Context):
 		try:
 			await ProfileService.disable(ctx.pkg.options.get("name"))
 		except Exception as error:
-			print(error)
+			pass
 
 		yield PackageFesl(
 			request_type=TypesRequests.ACCT,

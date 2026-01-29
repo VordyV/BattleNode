@@ -13,6 +13,7 @@ class SharedData:
 
     async def get(self, option: str):
         data = await self.__redis.hget(name=self.__section, key=option)
+        if data == None: return None
         return json.loads(data)
 
     async def set(self, option: str, value: object):

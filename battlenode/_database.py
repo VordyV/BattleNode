@@ -1,23 +1,24 @@
 from tortoise import Tortoise
 import os
 from loguru import logger
+from ._config import Config
 
-async def init_database(apps: dict):
+async def init_database(apps: dict, app_config: Config):
     connection = "default"
 
     config = {
         "connections": {
             connection: {
-                "engine": f"tortoise.backends.{os.getenv("BN_DATABASE_ENGINE")}",
+                "engine": f"tortoise.backends.{app_config.get('database_engine')}",
                 "credentials": {
-                    "database": os.getenv("BN_DATABASE_NAME"),
-                    "host": os.getenv("BN_DATABASE_HOST"),
-                    "password": os.getenv("BN_DATABASE_PASSWORD"),
-                    "port": int(os.getenv("BN_DATABASE_PORT")),
-                    "user": os.getenv("BN_DATABASE_USER"),
-                    "minsize": int(os.getenv("BN_DATABASE_MINSIZE")),
-                    "maxsize": int(os.getenv("BN_DATABASE_MAXSIZE")),
-                    "connect_timeout": int(os.getenv("BN_DATABASE_TIMEOUT")),
+                    "database": app_config.get('database_name'),
+                    "host": app_config.get('database_host'),
+                    "password": app_config.get('database_password'),
+                    "port": app_config.get('database_port'),
+                    "user": app_config.get('database_user'),
+                    "minsize": app_config.get('database_minsize'),
+                    "maxsize": app_config.get('database_maxsize'),
+                    "connect_timeout": app_config.get('database_timeout'),
                 }
             }
         },
@@ -33,7 +34,6 @@ async def init_database(apps: dict):
 
     try:
         await Tortoise.init(config=config)
-        await Tortoise.generate_schemas(safe=True)
     except Exception as error:
         print(error)
 

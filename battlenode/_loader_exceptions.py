@@ -7,3 +7,5 @@ class LoaderNoEventInstException(Exception): pass
 class LoaderShutNonWorkException(Exception): pass
 class LoaderDisableModuleException(Exception): pass
 class LoaderPluginNotExistsException(Exception): pass
+class LoaderNoCommandInstException(Exception): pass
+class LoaderNotSubClsBaseException(Exception): pass

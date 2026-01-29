@@ -22,8 +22,10 @@ class EventHub:
     def on(self, name: str, func: Callable):
         self.__eventsEmitter.on(name, func)
 
+    # < ! >
     def emit_future(self, name: str, *args: Any, **kwargs: Any):
         #self.__eventsEmitter.emit_future(name, self._get_event_ins(name, args, kwargs), *args, **kwargs)
+        # < !! > - RuntimeWarning: coroutine 'EventHub.emit_future.<locals>.wrapped_coro' was never awaited; self._ready.clear()
         async def wrapped_coro():
             try:
                 return await self.__eventsEmitter.emit_async(name, self._get_event_ins(name, args, kwargs), *args, **kwargs)

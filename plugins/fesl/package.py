@@ -6,16 +6,16 @@ import io
 class SerializationError(Exception): pass
 
 class TypesRequests(enum.Enum):
-    FSYS = "fsys"
-    ACCT = "acct"
-    SUBS = "subs"
-    DOBJ = "dobj"
+	FSYS = "fsys"
+	ACCT = "acct"
+	SUBS = "subs"
+	DOBJ = "dobj"
 
 class TypesPackages(enum.Enum):
-    SINGLE_CLIENT = b"\xC0" # one packet request
-    SINGLE_SERVER = b"\x80" # one packet answer/request
-    MULTI_CLIENT = b"\xF0" # part of multipacket request (all parts with one PacketNumber)
-    MULTI_SERVER = b"\xB0" # part of multipacket answer/request (all parts with one PacketNumber)
+	SINGLE_CLIENT = b"\xC0" # one packet request
+	SINGLE_SERVER = b"\x80" # one packet answer/request
+	MULTI_CLIENT = b"\xF0" # part of multipacket request (all parts with one PacketNumber)
+	MULTI_SERVER = b"\xB0" # part of multipacket answer/request (all parts with one PacketNumber)
 
 class PackageFesl:
 	def __init__(self, request_type: TypesRequests = TypesRequests.FSYS, package_type: TypesPackages = TypesPackages.SINGLE_SERVER, number: int = 1, options: dict = {}):

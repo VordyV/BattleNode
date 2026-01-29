@@ -22,21 +22,22 @@ class Config:
 
 class Configurator:
 
-    def __init__(self, filename: str):
-        self.__filename = filename
+    def __init__(self, path: str):
+        self.__path = path
         self.config: dict = {}
 
-        Path(self.__filename).touch(exist_ok=True)
+        Path(self.__path).touch(exist_ok=True)
 
     async def __read_file(self):
-        async with await open_file(self.__filename) as file:
+        async with await open_file(self.__path) as file:
             return await file.read()
 
     def __write_file(self, data: ByteString):
-        with open(self.__filename, "wb") as file:
+        with open(self.__path, "wb") as file:
             file.write(data)
 
     async def load(self):
+
         data = await self.__read_file()
         if data: self.config = json.loads(data)
 

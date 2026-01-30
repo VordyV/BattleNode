@@ -21,6 +21,8 @@ from pathlib import Path
 
 class Loader:
 
+    shutdown_prefix: str = "_"
+
     def __init__(self, folder: str, battlenode):
         self.__folder = folder
         self.__battlenode = battlenode
@@ -73,7 +75,14 @@ class Loader:
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for plugin, result in zip(self.__plugins.values(), results):
-            if isinstance(result, Exception):
+            if isinstance(result, Exception): plugin._set_error(str(result))
+
+            if isinstance(result, LoaderPluginNotExistsException):
+                await self.__set_status(plugin, PluginStatuses.ERROR)
+                plugin.logger.error("plugin not loaded: {error}", error=result)
+            elif isinstance(result, LoaderDisableModuleException):
+                await self.__set_status(plugin, PluginStatuses.DISABLED)
+            elif isinstance(result, Exception):
                 await self.__set_status(plugin, PluginStatuses.ERROR)
                 tb = ''.join(traceback.format_exception(type(result), result, result.__traceback__))
                 plugin.logger.exception("plugin not loaded: {error}\n{tb}", error=result, tb=tb)
@@ -97,6 +106,7 @@ class Loader:
 
         for plugin, result in zip(self.__plugins.values(), results):
             if isinstance(result, Exception):
+                plugin._set_error(str(result))
                 await self.__set_status(plugin, PluginStatuses.ERROR)
                 tb = ''.join(traceback.format_exception(type(result), result, result.__traceback__))
                 plugin.logger.exception("plugin didn't shut down properly: {error}\n{tb}", error=result, tb=tb)
@@ -116,13 +126,14 @@ class Loader:
 
         for plugin, result in zip(self.__plugins.values(), results):
             if isinstance(result, Exception):
+                plugin._set_error(str(result))
                 await self.__set_status(plugin, PluginStatuses.ERROR)
                 plugin.logger.exception("plugin did not reload correctly: {error}", error=result)
                 #print("RELOAD ERROR", plugin.name, result)
 
     async def load_plugin(self, module_name: str):
         plugin = self._add_new_pl(module_name)
-        if module_name[0] == "_": raise LoaderDisableModuleException(f"Module {module_name} is disabled")
+        if module_name[0] == Loader.shutdown_prefix: raise LoaderDisableModuleException(f"Module {module_name} is disabled")
         try:
             await self.__set_status(plugin, PluginStatuses.WAITING)
             loop = asyncio.get_event_loop()
@@ -132,7 +143,8 @@ class Loader:
                 plugin
             )
             await self.__set_status(plugin, PluginStatuses.LOADED)
-        except:
+        except Exception as error:
+            plugin._set_error(str(error))
             await self.__set_status(plugin, PluginStatuses.ERROR)
             raise
 
@@ -143,7 +155,8 @@ class Loader:
         try:
             await self.__set_status(plugin, PluginStatuses.STOPPING)
             await self._shutdown_plugin(plugin, exitcode)
-        except:
+        except Exception as error:
+            plugin._set_error(str(error))
             await self.__set_status(plugin, PluginStatuses.ERROR)
             raise
 
@@ -168,6 +181,7 @@ class Loader:
 
     async def reload_plugin(self, plugin: Plugin):
         if plugin.status != PluginStatuses.RUNNING: raise LoaderShutNonWorkException(f"Plugin {plugin.name} is inoperable and cannot be turned off")
+        plugin._set_error(None)
         try:
             await self.__set_status(plugin, PluginStatuses.RESTARTING)
             await self._shutdown_plugin(plugin, "reload")
@@ -181,6 +195,7 @@ class Loader:
             await self._init_pl(plugin)
             await self.__set_status(plugin, PluginStatuses.RUNNING)
         except Exception as error:
+            plugin._set_error(str(error))
             await self.__set_status(plugin, PluginStatuses.ERROR)
             raise
 
@@ -195,6 +210,7 @@ class Loader:
     def _import_pl(self, plugin: Plugin):
         path = f"{self.__folder}.{plugin.name}"
         spec = importlib.util.find_spec(path)
+        if not spec: raise LoaderPluginNotExistsException(f"Plugin with that name '{plugin.name}' not found")
         module = importlib.util.module_from_spec(spec)
         sys.modules[path] = module
         dirname = os.path.dirname(spec.origin)
@@ -264,6 +280,7 @@ class Loader:
                 raise LoaderNoDepPluginException(f"Plugin '{plugin.name}' requires '{name}' with version '{spec_ver}'")
 
     def _add_new_pl(self, module_name: str) -> Plugin:
+        module_name = module_name[1:] if module_name[0] == Loader.shutdown_prefix else module_name
         if module_name in self.__plugins: raise LoaderPluginExistsException(f"Plugin '{module_name}' already added")
         plugin = Plugin(module_name)
         self.__plugins[module_name] = plugin
@@ -274,6 +291,7 @@ class Loader:
 
     async def init_plugin(self, plugin: Plugin, pre_init: bool = False):
         if plugin.status != PluginStatuses.STOPPED and plugin.status != PluginStatuses.ERROR and plugin.status != PluginStatuses.LOADED: raise LoaderShutNonWorkException(f"Plugin '{plugin.name}' must be turned off")
+        plugin._set_error(None)
         try:
             await self.__set_status(plugin, PluginStatuses.INITIALIZING)
             if pre_init: self._pre_init_pl(plugin, plugin.module)
@@ -281,6 +299,7 @@ class Loader:
             await self.__set_status(plugin, PluginStatuses.RUNNING)
             plugin._set_exitcode(None)
             await self.__events.emit_async(f"{plugin.name}.init")
-        except:
+        except Exception as error:
+            plugin._set_error(str(error))
             await self.__set_status(plugin, PluginStatuses.ERROR)
             raise

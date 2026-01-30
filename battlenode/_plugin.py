@@ -63,6 +63,7 @@ class Plugin:
         self.__logger = logger.bind(plugin=self.__name)
         self.__app: dict = {}
         self.__exitcode: str | None = None
+        self.__error: str | None = None
 
     @property
     def instance(self):
@@ -96,6 +97,10 @@ class Plugin:
     def exitcode(self):
         return self.__exitcode
 
+    @property
+    def error(self):
+        return self.__error
+
     def _set_instance(self, instance: BasePlugin):
         self.__instance = instance
         self.__meta = instance.Meta
@@ -114,5 +119,8 @@ class Plugin:
     def _del_instance(self):
         self.__instance = None
 
-    def _set_exitcode(self, value: str | None):
-        self.__exitcode = value
+    def _set_exitcode(self, text: str | None):
+        self.__exitcode = text
+
+    def _set_error(self, text: str | None):
+        self.__error = text

@@ -8,5 +8,5 @@ class PluginStatuses(Enum):
     STOPPED = 4 #
     ERROR = 5 #
     RESTARTING = 6 #
-    DISABLED = 7
+    DISABLED = 7 #
     WAITING = 8 #

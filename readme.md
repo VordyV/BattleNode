@@ -1,3 +1,9 @@
+# BattleNode
+
+---
+
+BattleNode is a master server emulator for Battlefield 2142.
+
 ## Events
 The full event name usually looks like this: `plugin.event`. The table below contains only the names of the events
 
@@ -45,23 +51,3 @@ Events that are not related to plugins are global and are called by the applicat
 | `RESTARTING`   | During shutdown and reloading                                                              |
 | `DISABLED`     | Cannot be loaded, this action is prohibited                                                |
 | `WAITING`      | First status after registration in the loader. Awaiting import                             |
-
-___
-
-## Environment variables
-
-| Name                   | type      | Description |
-|------------------------|-----------|-------------|
-| `BN_DATABASE_HOST`     | str       |             |
-| `BN_DATABASE_PORT`     | int       |             |
-| `BN_DATABASE_USER`     | str       |             |
-| `BN_DATABASE_PASSWORD` | str       |             |
-| `BN_DATABASE_NAME`     | str       |             |
-| `BN_DATABASE_ENGINE`   | str       |             |
-| `BN_DATABASE_MINSIZE`  | int       |             |
-| `BN_DATABASE_MAXSIZE`  | int       |             |
-| `BN_DATABASE_TIMEOUT`  | int (sec) |             |
-| `BN_REDIS_HOST`        | str       |             |
-| `BN_REDIS_PORT`        | int       |             |
-| `BN_REDIS_NAME`        | int       |             |
-| `BN_REDIS_PASSWORD`    | str       |             |

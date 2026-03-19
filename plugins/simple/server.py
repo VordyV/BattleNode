@@ -16,7 +16,7 @@ async def handler(config):
     await server.serve()
     #await asyncio.Event().wait()
 
-def main(queue, config):
+def main(queue, config, app_config):
     try:
         asyncio.run(handler(config))
     except Exception as e:

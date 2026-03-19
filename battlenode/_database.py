@@ -32,10 +32,9 @@ async def init_database(apps: dict, app_config: Config):
             "default_connection": connection
         }
 
-    try:
-        await Tortoise.init(config=config)
-    except Exception as error:
-        print(error)
+    await Tortoise.init(config=config)
+    conn = Tortoise.get_connection("default")
+    await conn.execute_query("SELECT version()")
 
 async def close_database():
     try:

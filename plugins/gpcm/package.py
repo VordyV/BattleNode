@@ -38,3 +38,8 @@ class PackageGPCM:
 			buffer.write(b"\\")
 		buffer.write(b"final\\")
 		return buffer.getvalue()
+
+	def get(self, option_name: str) -> Any | None:
+		if not self.options: return None
+		for option in self.options:
+			if option[0] == option_name: return option[1]

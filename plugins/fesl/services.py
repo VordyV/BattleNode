@@ -8,6 +8,8 @@ from pydantic import Field, validate_call, EmailStr
 from cryptography.fernet import Fernet
 import bcrypt
 from .actions import Actions
+import redis.asyncio as redis
+import uuid
 
 class ASDuplicateException(Exception): pass
 class ASAuthorizeException(Exception): pass
@@ -21,8 +23,7 @@ NameField = Annotated[str, Field(max_length=16, min_length=3, pattern=r"^[A-Za-z
 
 class EncryptedInfo:
 
-    def __init__(self):
-        key = os.getenv("BN_FESL_KEY")
+    def __init__(self, key: str):
         self.__fernet = Fernet(key)
 
     def encode_token(self, login: str, password: str) -> str:
@@ -161,8 +162,41 @@ class ProfileService:
             await profile.save()
         return True
 
+    @staticmethod
+    async def get(pid: int):
+        profile = await Profile.get(id=pid)
+        return {
+            "id": profile.id,
+            "name": profile.name,
+            "uid": profile.account_id,
+            "created_at": profile.created_at,
+            "updated_at": profile.updated_at,
+            "is_active": profile.is_active,
+        }
+
 class ChronicleService:
 
     @staticmethod
     async def register(account_id: int, action: Actions, metadata: dict, ip_address: str, mac_address: str):
         await Chronicle.create(account=account_id, action=action, metadata=metadata, ip_address=ip_address, mac_address=mac_address)
+
+class Ticket:
+
+    section: str = "fesl:ticket:{ticket}"
+
+    def __init__(self, redis: redis.Redis, lifetime: datetime.timedelta = datetime.timedelta(minutes=5)):
+        self.__redis = redis
+        self.__lifetime = lifetime
+
+    async def add(self, uid: int) -> str:
+        ticket = uuid.uuid4().hex
+        await self.__redis.set(Ticket.section.format(ticket=ticket), uid, ex=self.__lifetime.seconds)
+        return ticket
+
+    async def verify(self, ticket: str) -> int | None:
+        section = Ticket.section.format(ticket=ticket)
+        if await self.__redis.exists(section):
+            uid = await self.__redis.get(section)
+            await self.__redis.delete(section)
+            return uid.decode()
+        return None

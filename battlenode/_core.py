@@ -140,7 +140,7 @@ class BattleNode:
             }
             await self.__redis.publish(event.name, json.dumps(data))
         except Exception as error:
-            logger.error(f"Error sending event '{event.name}' to redis: {error}")
+            logger.debug(f"Error sending event '{event.name}' to redis: {error}")
 
     def __signal_handler(self, sig, frame):
         self.__event.set()
@@ -200,6 +200,7 @@ class BattleNode:
                 shell = asyncio.create_task(self.interactive_shell())
                 channel_handler = asyncio.create_task(self.__channel_handler())
                 await self.__event.wait()
+                channel_handler.cancel()
                 self.__events.emit_future(f"{battlenode.__name__}.stop")
                 self.__events.emit_future(f"{battlenode.__name__}.database.close")
                 await close_database()

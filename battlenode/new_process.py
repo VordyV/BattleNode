@@ -33,6 +33,10 @@ class NewProcess:
     def shared_data(self) -> SharedData:
         return self.__shared_data
 
+    @property
+    def redis(self) -> redis.Redis:
+        return self.__redis
+
     def debug(self, text: str): self.__queue.put(("debug", text))
     def info(self, text: str): self.__queue.put(("info", text))
     def error(self, text: str): self.__queue.put(("error", text))

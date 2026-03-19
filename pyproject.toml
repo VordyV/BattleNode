@@ -27,6 +27,7 @@ dependencies = [
     "tortoise-orm[aiomysql] (>=0.25.3,<0.26.0)",
     "fastapi (>=0.128.0,<0.129.0)",
     "uvicorn[default] (>=0.40.0,<0.41.0)",
+    "textual (>=7.5.0,<8.0.0)",
 ]
 
 

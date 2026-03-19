@@ -1,10 +1,11 @@
-from battlenode import BasePlugin, EventCollection, EventData
+from battlenode import BasePlugin, EventCollection, EventData, CommandCollection
 from .server import main
 import pydantic
 
 class GPCM(BasePlugin):
 
     events = EventCollection()
+    commands = CommandCollection()
     #app = ["plugins.fesl.models"]
 
     process_target = main
@@ -17,7 +18,7 @@ class GPCM(BasePlugin):
     class Meta(BasePlugin.Meta):
         name = "GSCM"
         requires_battlenode = ">=0.1"
-        version = "0.1"
+        version = "0.2"
         dependencies = {
         }
 

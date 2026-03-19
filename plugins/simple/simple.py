@@ -1,10 +1,11 @@
-from battlenode import BasePlugin, EventCollection, EventData
+from battlenode import BasePlugin, EventCollection, EventData, CommandCollection
 import pydantic
 from .server import main
 
 class Simple(BasePlugin):
 
     events = EventCollection()
+    commands = CommandCollection()
     #app = ["plugins.fesl.models"]
 
     process_target = main

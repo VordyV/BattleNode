@@ -1,4 +1,4 @@
-from battlenode import BasePlugin, EventCollection, EventData
+from battlenode import BasePlugin, EventCollection, EventData, CommandCollection
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_ERROR, EVENT_JOB_EXECUTED, EVENT_JOB_REMOVED
 #from apscheduler.job import Job
 import pydantic
@@ -12,6 +12,7 @@ import datetime
 class SB(BasePlugin):
 
     events = EventCollection()
+    commands = CommandCollection()
     app = ["plugins.sb.models"]
 
     process_target = main

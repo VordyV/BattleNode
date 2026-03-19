@@ -15,6 +15,10 @@ class Context:
 
     @property
     def app_config(self):
+        return self.__np.app_config
+
+    @property
+    def config(self):
         return self.__np.config
 
     @property

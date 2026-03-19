@@ -4,12 +4,13 @@ import traceback
 from pydantic import ValidationError
 from . package import PackageFesl, TypesPackages, TypesRequests
 from typing import Any
-from .services import AccountService, ProfileService, ASDuplicateException, PSDuplicateException, ASAuthorizeException, EncryptedInfo
+from .services import AccountService, ProfileService, ASDuplicateException, PSDuplicateException, ASAuthorizeException, EncryptedInfo, Ticket
 from .server_client import Client
 from .server_context import Context
 from cryptography.fernet import InvalidToken
 import datetime
 import functools
+import uuid
 
 account_field_errors = {
 	"login": "Account.ScreenName",
@@ -110,8 +111,11 @@ class ProtocolFesl:
 		yield
 
 	@staticmethod
-	@txn()
+	@txn(auth=True)
 	async def GameSpyPreAuth(ctx: Context):
+		#ticket = await asyncio.to_thread(EncryptedInfo(ctx.config.get("key")).encode_token, ctx.client.account_id, lifetime=datetime.timedelta(minutes=1))
+		ticket = await Ticket(ctx.np.redis).add(ctx.client.profile_id)
+		print(ticket)
 		yield PackageFesl(
 			request_type=TypesRequests.ACCT,
 			package_type=TypesPackages.SINGLE_SERVER,
@@ -119,7 +123,8 @@ class ProtocolFesl:
 			options={
 				"TXN": "GameSpyPreAuth",
 				"challenge": "lrzrmqyh",
-				"ticket": "B2BT2YE3HkZHK/BmTKALo84tIwrgfNmGGE0EdTsHdlbXEPVhWVgDP+1MG64xfC2W5nd7WfzAsi5nx7JSbpXm56pOQ%3d%3d",
+				"ticket": ticket
+				#"ticket": "B2BT2YE3HkZHK/BmTKALo84tIwrgfNmGGE0EdTsHdlbXEPVhWVgDP+1MG64xfC2W5nd7WfzAsi5nx7JSbpXm56pOQ%3d%3d",
 			}
 		).deserializer()
 
@@ -127,6 +132,10 @@ class ProtocolFesl:
 	@txn(auth=True)
 	async def GetAccount(ctx: Context):
 		data = await AccountService.get_info(ctx.client.account_id)
+		#profile = await ProfileService.
+
+		pid = ctx.client.profile_id
+
 		yield PackageFesl(
 			request_type=TypesRequests.ACCT,
 			package_type=TypesPackages.SINGLE_SERVER,
@@ -134,7 +143,7 @@ class ProtocolFesl:
 			options={
 				"TXN": "GetAccount",
 				"name": data.get("login"),
-				"profileId": data.get("id"),
+				"profileId": pid,
 				"userId": data.get("id"),
 				"email": data.get("email"),
 				"countryCode": data.get("country_code"),
@@ -169,7 +178,7 @@ class ProtocolFesl:
 			).deserializer()
 
 		else:
-
+			ctx.client._set_profile_id(profile.get("id"))
 			yield PackageFesl(
 				request_type=TypesRequests.ACCT,
 				package_type=TypesPackages.SINGLE_SERVER,
@@ -410,9 +419,9 @@ class ProtocolFesl:
 					"lkey": "123456789012345678901234567.",
 					"encryptedLoginInfo": f"{token}",
 					"entitledGameFeatureWrappers.0.gameFeatureId": 2590,
-					"entitledGameFeatureWrappers.0.status": 0,
+					"entitledGameFeatureWrappers.0.status": 1,
 					"entitledGameFeatureWrappers.0.entitlementExpirationDate": "",
-					"entitledGameFeatureWrappers.0.message": "",
+					"entitledGameFeatureWrappers.0.message": "Hu!",
 					"entitledGameFeatureWrappers.0.entitlementExpirationDays": -1
 				}
 			).deserializer()

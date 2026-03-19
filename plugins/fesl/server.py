@@ -12,7 +12,9 @@ import sys, traceback
 from battlenode import NewProcess
 
 class EchoServer(TCPServer):
-    
+
+    proxy_header_prefix = "PROXY"
+
     def __init__(self, *args, new_process: NewProcess, **kwargs):
         super().__init__(*args, **kwargs)
         self._np = new_process
@@ -21,16 +23,28 @@ class EchoServer(TCPServer):
     async def handle_stream(self, stream, address):
         #client_proxy = await stream.read_bytes(8, partial=True)
         #print("client_proxy", client_proxy)
-        client = Client(stream, address)
+
+        real_address: tuple[str, int] = address
+
+        if self._np.config.get("proxy"):
+            data = await stream.read_until(b"\n")
+
+            data = data.decode()
+            if data.startswith(EchoServer.proxy_header_prefix):
+                proxy_data = data.split()
+                p_protocol = proxy_data[1]
+                p_real_ip = proxy_data[2]
+                p_real_port = proxy_data[4]
+                self._np.debug(f"proxy data: {p_protocol} {p_real_ip}:{p_real_port}")
+
+                real_address = (p_real_ip, p_real_port)
+            #print("proxy_data", proxy_data)
+
+        client = Client(stream, real_address)
         #print("client", client)
         self._clients.append(client)
 
         self._np.debug(f"{client.address[0]}({client.address[1]}) connected to the server")
-
-        if self._np.config.get("proxy"):
-            proxy_data = await stream.read_until(b"\n")
-            self._np.debug(f"proxy data: {proxy_data}")
-            #print("proxy_data", proxy_data)
 
         while True:
             try:
@@ -39,10 +53,10 @@ class EchoServer(TCPServer):
                 number = await stream.read_bytes(3)
                 size = await stream.read_bytes(4)
                 data = await stream.read_until(b"\x00")
-                #print("recv", request_type + package_type + number + size + data)
+                #print("f recv", request_type + package_type + number + size + data)
                 pkg = PackageFesl.validate(request_type, package_type, number, size, data)
                 async for answer in getattr(ProtocolFesl, pkg.options["TXN"])(Context(pkg=pkg, new_process=self._np, client=client)):
-                    #print("answer", answer)
+                    #print("f answer", answer)
                     await stream.write(answer)
 
             except StreamClosedError:
@@ -51,7 +65,7 @@ class EchoServer(TCPServer):
             except Exception as e:
                 #print("Lost client at host %s", address[0], e)
                 #traceback.print_exc(file=sys.stdout)
-                self._np.error(str(e))
+                self._np.debug(str(e))
                 break
         self._np.debug(f"{client.address[0]}({client.address[1]}) disconnected from the server")
         self._clients.remove(client)
@@ -65,7 +79,10 @@ class EchoServer(TCPServer):
 
 async def handler(np: NewProcess):
     # manually specify only what is necessary for work
-    await init_database(apps={"fesl": ["plugins.fesl.models"]})
+    await init_database(apps={"fesl": ["plugins.fesl.models"]}, app_config=np.app_config)
+    np.init()
+
+    #task = asyncio.create_task(np.subscribe("fesl.test", t))
 
     server = EchoServer(new_process=np)
     server.listen(np.config.get("port"))
@@ -78,8 +95,8 @@ async def handler(np: NewProcess):
     pc.stop()
     server.stop()
 
-def main(queue, config):
+def main(queue, config, app_config):
     try:
-        asyncio.run(handler(NewProcess(queue=queue, app_config=config, app_name="fesl")))
+        asyncio.run(handler(NewProcess(queue=queue, config=config, app_config=app_config, app_name="fesl")))
     except Exception as e:
         queue.put(e)

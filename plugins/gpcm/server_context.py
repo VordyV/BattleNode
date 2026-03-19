@@ -1,11 +1,12 @@
 from .server_client import Client
 from .package import PackageGPCM
+from battlenode import NewProcess
 
 class Context:
 
-    def __init__(self, pkg: PackageGPCM, app_config: dict, client: Client):
+    def __init__(self, pkg: PackageGPCM, new_process: NewProcess, client: Client):
         self.__pkg = pkg
-        self.__app_config = app_config
+        self.__np = new_process
         self.__client = client
 
     @property
@@ -14,8 +15,16 @@ class Context:
 
     @property
     def app_config(self):
-        return self.__app_config
+        return self.__np.app_config
+
+    @property
+    def config(self):
+        return self.__np.config
 
     @property
     def client(self):
         return self.__client
+
+    @property
+    def np(self):
+        return self.__np

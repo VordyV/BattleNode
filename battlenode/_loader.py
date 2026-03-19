@@ -18,6 +18,7 @@ import packaging.specifiers
 import battlenode
 import pydantic
 from pathlib import Path
+from loguru import logger
 
 class Loader:
 
@@ -93,8 +94,11 @@ class Loader:
         return {pl.name: pl.app for pl in self.__plugins.values()}
 
     async def init_database(self, apps: dict):
-        await init_database(apps, self.__battlenode.config)
-        self.__events.emit_future(f"{battlenode.__name__}.database.init")
+        try:
+            await init_database(apps, self.__battlenode.config)
+            self.__events.emit_future(f"{battlenode.__name__}.database.init")
+        except Exception as error:
+            logger.error(str(error))
 
     async def shutdown_plugins(self):
         tasks = []

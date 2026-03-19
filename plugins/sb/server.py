@@ -8,7 +8,6 @@ import sys, traceback
 from battlenode import NewProcess
 from .enctypex import EncTypeX
 from .package import Header, Server, Package
-from opengsq.protocols.battlefield2 import Battlefield2
 
 class EchoServer(TCPServer):
     def __init__(self, *args, new_process: NewProcess, **kwargs):
@@ -54,8 +53,8 @@ async def handler(np: NewProcess):
 
     server.stop()
 
-def main(queue, config):
+def main(queue, config, app_config):
     try:
-        asyncio.run(handler(NewProcess(queue=queue, app_config=config, app_name="sb")))
+        asyncio.run(handler(NewProcess(queue=queue, config=config, app_name="sb", app_config=app_config)))
     except Exception as e:
         queue.put(e)

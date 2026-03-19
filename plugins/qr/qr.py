@@ -1,10 +1,11 @@
-from battlenode import BasePlugin, EventCollection, EventData
+from battlenode import BasePlugin, EventCollection, EventData, CommandCollection
 from .server import main
 import pydantic
 
 class QR(BasePlugin):
 
     events = EventCollection()
+    commands = CommandCollection()
     #app = ["plugins.fesl.models"]
 
     process_target = main

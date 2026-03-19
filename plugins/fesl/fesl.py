@@ -1,4 +1,4 @@
-from battlenode import BasePlugin, EventCollection, EventData
+from battlenode import BasePlugin, EventCollection, EventData, CommandCollection
 from .services import CountryCodeField, EncryptedInfo
 from .server import main
 import pydantic
@@ -6,6 +6,7 @@ import pydantic
 class Fesl(BasePlugin):
 
     events = EventCollection()
+    commands = CommandCollection()
     app = ["plugins.fesl.models"]
 
     process_target = main
@@ -22,14 +23,24 @@ class Fesl(BasePlugin):
         theaterPort: int = 0
         tos: str = "<body>Whether you chose it or it was chosen for you, it is the best city left.<br>I think so highly of City 17 that I have chosen to house my government here, in the Citadel so carefully provided by our Protectors.<br><br>I am proud to call City 17 my home.<br>Русский текст</body>"
         countries: dict[str, CountryCodeField] = {"AU": "Country", "NZ": "Country2"}
-        proxy: bool = False
+        proxy: bool = True
+        key: str = ""
 
     class Meta(BasePlugin.Meta):
         name = "Fesl"
         requires_battlenode = ">=0.1"
-        version = "0.1"
+        version = "0.2"
         dependencies = {
         }
+
+    @commands.on("accounts", "List of registered accounts")
+    async def on_cmd_accounts(self):
+        #self.battlenode.events.emit_future("fesl.test", 1)
+        return ":("
+
+    @events.on("test")
+    async def on_fesl_test(self, event):
+        pass
 
     @events.on("battlenode.database.init")
     async def on_database_init(self, event: EventData): pass

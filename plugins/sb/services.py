@@ -51,6 +51,12 @@ class ListOfServersService:
         return result
 
     @staticmethod
+    async def get(sid: int,) -> dict:
+        gs = await GameServer.get_or_none(id=sid).values("id", "address", "query_port", "data")
+        if not gs: raise LOSSUnknownServerException(f"There is no server with this ID '{sid}'")
+        return gs
+
+    @staticmethod
     def transform_data(server_data: dict) -> dict:
         result = {}
         for key, value in server_data.items():

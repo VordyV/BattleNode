@@ -5,4 +5,4 @@ from ._database import init_database, close_database
 from .new_process import NewProcess
 from ._commands import CommandCollection
 
-__version__ = "0.3.0"
+__version__ = "0.4.1"

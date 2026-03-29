@@ -86,11 +86,16 @@ class ProcessSupervisor:
         while pp.process.is_alive():
             try:
                 msg = p_queue.get(timeout=0.5)
+
+                level = msg["level"]
+                text = msg["text"]
+
                 if isinstance(msg, Exception): raise PSException(str(msg))
-                if msg[0] == "debug": pp.plugin.logger.debug(msg[1])
-                elif msg[0] == "info": pp.plugin.logger.info(msg[1])
-                elif msg[0] == "error": pp.plugin.logger.error(msg[1])
-                elif msg[0] == "warning": pp.plugin.logger.warning(msg[1])
+
+                if level == "debug": pp.plugin.logger.debug(text)
+                elif level == "info": pp.plugin.logger.info(text)
+                elif level == "error": pp.plugin.logger.error(f'{text}\n{msg["traceback"]}')
+                elif level == "warning": pp.plugin.logger.warning(text)
             except queue.Empty: pass
 
         pp.process.join()

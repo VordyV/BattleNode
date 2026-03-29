@@ -23,6 +23,7 @@ from prompt_toolkit.patch_stdout import StdoutProxy
 from callixir import AsyncSimpleShell
 import json
 from tortoise import Tortoise
+import re
 
 logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 logging.getLogger("asyncmy").setLevel(logging.CRITICAL)
@@ -46,6 +47,8 @@ class BattleNodeConfig(pydantic.BaseModel):
 
 class BattleNode:
 
+    shell_cursor: str = ""
+
     def __init__(self, plugin_folder: str = "plugins", parent_dir: str = ""):
         self.__plugin_folder = plugin_folder
         self.__configurator = Configurator(path=os.path.join(parent_dir, f"{battlenode.__name__}.cfg.json"))
@@ -57,6 +60,7 @@ class BattleNode:
         self.__event = asyncio.Event()
         self.__scheduler = AsyncIOScheduler()
         self.__command_shell = AsyncSimpleShell()
+        self.__prompt_session: PromptSession | None = None
 
         self.__events.on("battlenode.start", self.__on_event_start)
         self.__events.on("battlenode.stop", self.__on_event_stop)
@@ -100,6 +104,63 @@ class BattleNode:
     def command_shell(self) -> AsyncSimpleShell:
         return self.__command_shell
 
+    @property
+    def prompt_session(self) -> PromptSession:
+        return self.__prompt_session
+
+    async def prompt(self, message: str, value: str = None, is_password: bool = False, not_empty: bool = False, regex: str = None, min_length: int = None, max_length: int = 128, enum: list = None) -> str | None:
+        while 1:
+            try:
+                result = await self.__prompt_session.prompt_async(message, handle_sigint=False, is_password=is_password)
+
+                result = result.strip()
+
+                if result == "" and not_empty:
+                    print("You didn't enter anything. Please specify what is required")
+                    continue
+
+                if enum is not None and result not in enum:
+                    print(f"Invalid value. Allowed values are: {', '.join(enum)}")
+                    continue
+
+                if max_length is not None and len(result) > max_length:
+                    print(f"Exceeded the allowed string length ({max_length})")
+                    continue
+
+                if min_length is not None and len(result) < min_length:
+                    print(f"String is too short ({min_length})")
+                    continue
+
+                if regex and not_empty and not bool(re.compile(regex).fullmatch(result)):
+                    print("Invalid value")
+                    continue
+
+                if result == "" and value:
+                    return value
+                return result
+            except (EOFError, KeyboardInterrupt):
+                return None
+
+    async def prompt_int(self, message: str, value: int = None) -> int | None:
+        while 1:
+            result = await self.prompt(message, str(value))
+
+            if not result.isdigit():
+                print("Please specify an integer")
+                continue
+
+            return int(result)
+
+    async def prompt_bool(self, message: str, value: bool = None) -> bool | None:
+        while 1:
+            result = await self.prompt(message, "1" if value else "0")
+
+            if result in ["y", "Y", "1", "t", "T"]: return True
+            elif result in ["n", "N", "0", "f", "F"]: return False
+            else:
+                print("Specify 'y' (yes) or 'n' (no)")
+                continue
+
     async def __on_cmd_plugin_stop(self, plugin_name: str):
         plugin = self.__loader.get_plugin(plugin_name)
         if plugin.status != PluginStatuses.RUNNING: raise Exception("Cannot disable a plugin that is not enabled")
@@ -128,6 +189,8 @@ class BattleNode:
         print(self.__command_shell.beautiful_help)
 
     async def __on_event_all(self, event, *args):
+        if event.from_redis: return
+
         try:
             event_data = json.dumps(args)
         except:
@@ -170,13 +233,17 @@ class BattleNode:
 
     async def interactive_shell(self):
 
-        session = PromptSession("")
+        self.__prompt_session = PromptSession()
 
         while True:
             try:
-                data = await session.prompt_async(handle_sigint=False)
+                data = await self.__prompt_session.prompt_async(BattleNode.shell_cursor, handle_sigint=False)
+                if data.strip() == "": continue
+
                 cmd = await self.__command_shell.execute(data)
-                if cmd.error: print(cmd.error)
+                if cmd.error:
+                    print(cmd.error)
+                    #print(cmd.err_traceback)
             except (EOFError, KeyboardInterrupt):
                 self.__signal_handler(None, None)
                 return
@@ -192,7 +259,7 @@ class BattleNode:
                 logger.remove()
                 logger.add(StdoutProxy(raw=True), colorize=True, enqueue=True, format="<green>{time:HH:mm:ss}</green> <level>{message}</level>", level=self.__config.get("log_level"), filter=lambda record: "plugin" not in record["extra"])
                 logger.add(StdoutProxy(raw=True), colorize=True, enqueue=True, format="<green>{time:HH:mm:ss}</green> <white>[{extra[plugin]}]</white> <level>{message}</level>", level=self.__config.get("log_level"), filter=lambda record: "plugin" in record["extra"])
-                self.__events.emit_future(f"{battlenode.__name__}.start")
+                await self.__events.emit_async(f"{battlenode.__name__}.start", False)
                 #self.__rps = self.__redis.pubsub()
                 await self.__loader.init()
                 await self.__loader.load_plugins()
@@ -201,8 +268,8 @@ class BattleNode:
                 channel_handler = asyncio.create_task(self.__channel_handler())
                 await self.__event.wait()
                 channel_handler.cancel()
-                self.__events.emit_future(f"{battlenode.__name__}.stop")
-                self.__events.emit_future(f"{battlenode.__name__}.database.close")
+                await self.__events.emit_async(f"{battlenode.__name__}.stop", False)
+                await self.__events.emit_async(f"{battlenode.__name__}.database.close", False)
                 await close_database()
                 await self.__redis.close()
                 await self.__loader.shutdown_plugins()
@@ -237,8 +304,8 @@ class BattleNode:
                         #logger.info(f"CH {message}")
                         data = json.loads(message["data"].decode())
                         if data["sender"] == "core": continue
-                        if data["data"]: self.__events.emit_future(message["channel"].decode(), data["data"])
-                        else: self.__events.emit_future(message["channel"].decode())
+                        if data["data"]: self.__events.emit_future(message["channel"].decode(), data["data"], True)
+                        else: self.__events.emit_future(message["channel"].decode(), True)
 
                 await asyncio.sleep(0)
         except Exception as error:

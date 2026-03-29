@@ -45,17 +45,17 @@ class Loader:
         return self.__plugins
 
     async def _on_event_prodis_submitted(self, event):
-        self.__events.emit_future(f"{event.job_id}.process.submitted", event)
+        self.__events.emit_future(f"{event.job_id}.process.submitted", False, event)
 
     async def _on_event_prodis_executes(self, event):
-        self.__events.emit_future(f"{event.job_id}.process.executes", event)
+        self.__events.emit_future(f"{event.job_id}.process.executes", False, event)
 
         plugin = self.__plugins[event.job_id]
         if plugin.instance and plugin.instance.run_as_process and plugin.instance.process_target and plugin.status == PluginStatuses.RUNNING:
             await self.shutdown_plugin(plugin, "child_process_terminated")
 
     async def _on_event_prodis_error(self, event):
-        self.__events.emit_future(f"{event.job_id}.process.error", event)
+        self.__events.emit_future(f"{event.job_id}.process.error", False, event)
         
         plugin = self.__plugins[event.job_id]
         if plugin.instance.run_as_process and plugin.instance.process_target and plugin.status == PluginStatuses.RUNNING:
@@ -69,11 +69,19 @@ class Loader:
 
     async def load_plugins(self):
         if len(self.__plugins) > 1: raise LoaderReLoadPluginException("Plugins have already been loaded. Use reload methods")
-        tasks = []
+        '''tasks = []
         for module_name in self._get_all_plugin():
             tasks.append(asyncio.create_task(self.load_plugin(module_name)))
 
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        results = await asyncio.gather(*tasks, return_exceptions=True)'''
+
+        results = []
+        for module_name in self._get_all_plugin():
+            try:
+                result = await self.load_plugin(module_name)
+            except Exception as e:
+                result = e
+            results.append(result)
 
         for plugin, result in zip(self.__plugins.values(), results):
             if isinstance(result, Exception): plugin._set_error(str(result))
@@ -96,17 +104,26 @@ class Loader:
     async def init_database(self, apps: dict):
         try:
             await init_database(apps, self.__battlenode.config)
-            self.__events.emit_future(f"{battlenode.__name__}.database.init")
+            self.__events.emit_future(f"{battlenode.__name__}.database.init", False)
         except Exception as error:
             logger.error(str(error))
 
     async def shutdown_plugins(self):
-        tasks = []
+        '''tasks = []
         for plugin in self.__plugins.values():
             if plugin.status != PluginStatuses.RUNNING: continue
             tasks.append(asyncio.create_task(self.shutdown_plugin(plugin, "general_shutdown")))
 
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        results = await asyncio.gather(*tasks, return_exceptions=True)'''
+
+        results = []
+        for plugin in self.__plugins.values():
+            if plugin.status != PluginStatuses.RUNNING: continue
+            try:
+                result = await self.shutdown_plugin(plugin, "general_shutdown")
+            except Exception as e:
+                result = e
+            results.append(result)
 
         for plugin, result in zip(self.__plugins.values(), results):
             if isinstance(result, Exception):
@@ -121,12 +138,21 @@ class Loader:
         await close_database()
 
     async def reload_plugins(self):
-        tasks = []
+        '''tasks = []
         for plugin in self.__plugins.values():
             if plugin.status != PluginStatuses.RUNNING: continue
             tasks.append(asyncio.create_task(self.reload_plugin(plugin)))
 
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        results = await asyncio.gather(*tasks, return_exceptions=True)'''
+
+        results = []
+        for plugin in self.__plugins.values():
+            if plugin.status != PluginStatuses.RUNNING: continue
+            try:
+                result = await self.reload_plugin(plugin)
+            except Exception as e:
+                result = e
+            results.append(result)
 
         for plugin, result in zip(self.__plugins.values(), results):
             if isinstance(result, Exception):
@@ -166,7 +192,7 @@ class Loader:
 
     async def _shutdown_plugin(self, plugin: Plugin, exitcode: str):
         plugin._set_exitcode(exitcode)
-        await self.__events.emit_async(f"{plugin.name}.shutdown")
+        await self.__events.emit_async(f"{plugin.name}.shutdown", False)
 
         if plugin.instance.run_as_process and plugin.instance.process_target and plugin.status.RUNNING:
             self.__prodis.stop_process(plugin.name)
@@ -208,8 +234,8 @@ class Loader:
 
     async def __set_status(self, plugin: Plugin, status: PluginStatuses):
         plugin._set_status(status)
-        self.__events.emit_future(f"{battlenode.__name__}.plugins.statuschange", status, plugin)
-        self.__events.emit_future(f"{plugin.name}.statuschange", status)
+        await self.__events.emit_async(f"{battlenode.__name__}.plugins.statuschange", False, status, plugin)
+        await self.__events.emit_async(f"{plugin.name}.statuschange", False, status)
 
     def _import_pl(self, plugin: Plugin):
         path = f"{self.__folder}.{plugin.name}"
@@ -302,7 +328,7 @@ class Loader:
             await self._init_pl(plugin)
             await self.__set_status(plugin, PluginStatuses.RUNNING)
             plugin._set_exitcode(None)
-            await self.__events.emit_async(f"{plugin.name}.init")
+            await self.__events.emit_async(f"{plugin.name}.init", False)
         except Exception as error:
             plugin._set_error(str(error))
             await self.__set_status(plugin, PluginStatuses.ERROR)

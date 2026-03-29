@@ -370,14 +370,14 @@ typecheck = ["mypy"]
 
 [[package]]
 name = "callixir"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Python module for calling functions by string with argument support"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
 files = [
-    {file = "callixir-0.1.0-py3-none-any.whl", hash = "sha256:fd109f6f207bdcf233e3e86b7beae3e205a7c1206d1a4ff9201890aed9c6818e"},
-    {file = "callixir-0.1.0.tar.gz", hash = "sha256:ff4955ba811557be5c9e350e44b412a8b39d905373310fcf020110894ca2fafc"},
+    {file = "callixir-0.1.1-py3-none-any.whl", hash = "sha256:6fe3a23e67f30339b2eb356015980c15736d3cdacdf5c9476250b6ac026565d7"},
+    {file = "callixir-0.1.1.tar.gz", hash = "sha256:b21e332d60b29f54f3420e2900931e512aabc76aa07632f3af93b7158079d721"},
 ]
 
 [[package]]

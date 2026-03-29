@@ -4,13 +4,25 @@ import traceback
 from pydantic import ValidationError
 from . package import PackageFesl, TypesPackages, TypesRequests
 from typing import Any
-from .services import AccountService, ProfileService, ASDuplicateException, PSDuplicateException, ASAuthorizeException, EncryptedInfo, Ticket
+from .services import (AccountService,
+					   ProfileService,
+					   ASDuplicateException,
+					   PSDuplicateException,
+					   ASAuthorizeException,
+					   EncryptedInfo,
+					   Ticket,
+					   ASInvalidAgeException,
+					   PSNotFoundException,
+					   PSExceededNumProfilesException)
 from .server_client import Client
 from .server_context import Context
 from cryptography.fernet import InvalidToken
 import datetime
 import functools
 import uuid
+
+class FeslReAuthException(Exception): pass
+class FeslNoAccessProfileException(Exception): pass
 
 account_field_errors = {
 	"login": "Account.ScreenName",
@@ -115,7 +127,6 @@ class ProtocolFesl:
 	async def GameSpyPreAuth(ctx: Context):
 		#ticket = await asyncio.to_thread(EncryptedInfo(ctx.config.get("key")).encode_token, ctx.client.account_id, lifetime=datetime.timedelta(minutes=1))
 		ticket = await Ticket(ctx.np.redis).add(ctx.client.profile_id)
-		print(ticket)
 		yield PackageFesl(
 			request_type=TypesRequests.ACCT,
 			package_type=TypesPackages.SINGLE_SERVER,
@@ -161,24 +172,16 @@ class ProtocolFesl:
 	@staticmethod
 	@txn(auth=True)
 	async def LoginSubAccount(ctx: Context):
-		profile = await ProfileService.get_for_name(name=ctx.pkg.options.get("name"))
+		try:
+			profile = await ProfileService.get_for_name(name=ctx.pkg.options.get("name"))
 
-		if profile.get("uid") != ctx.client.account_id:
+			if profile.get("uid") != ctx.client.account_id: raise FeslNoAccessProfileException()
 
-			yield PackageFesl(
-				request_type=TypesRequests.ACCT,
-				package_type=TypesPackages.SINGLE_SERVER,
-				number=ctx.pkg.number,
-				options={
-					"TXN": "Login",
-					"localizedMessage": "The password was not correct. 1",
-					"errorContainer.[]": 0,
-					"errorCode": 101
-				}
-			).deserializer()
+			for client in ctx.clients:
+				if client.is_profile_authenticated and client.profile_id == profile.get("id"): raise FeslReAuthException()
 
-		else:
 			ctx.client._set_profile_id(profile.get("id"))
+
 			yield PackageFesl(
 				request_type=TypesRequests.ACCT,
 				package_type=TypesPackages.SINGLE_SERVER,
@@ -188,6 +191,30 @@ class ProtocolFesl:
 					"lkey": "111111111111111111111111111.",
 					"profileId": profile.get("id"),
 					"userId": profile.get("uid"),
+				}
+			).deserializer()
+		except (PSNotFoundException, FeslNoAccessProfileException) as error:
+			yield PackageFesl(
+				request_type=TypesRequests.ACCT,
+				package_type=TypesPackages.SINGLE_SERVER,
+				number=ctx.pkg.number,
+				options={
+					"TXN": "Login",
+					"localizedMessage": "null",
+					"errorContainer.[]": 0,
+					"errorCode": 101
+				}
+			).deserializer()
+		except FeslReAuthException as error:
+			yield PackageFesl(
+				request_type=TypesRequests.ACCT,
+				package_type=TypesPackages.SINGLE_SERVER,
+				number=ctx.pkg.number,
+				options={
+					"TXN": "Login",
+					"localizedMessage": "null",
+					"errorContainer.[]": 0,
+					"errorCode": 4294967194
 				}
 			).deserializer()
 
@@ -237,9 +264,9 @@ class ProtocolFesl:
 			number=ctx.pkg.number,
 			options={
 				"TXN": "GetEntitlementByBundle",
-				#"localizedMessage": "The customer has never had entitlement for this bundle.",
-				#"errorContainer.[]": 0,
-				#"errorCode": 3012
+				"localizedMessage": "null",
+				"errorContainer.[]": 0,
+				"errorCode": 3012
 			}
 		).deserializer()
 
@@ -318,7 +345,7 @@ class ProtocolFesl:
 				}
 			).deserializer()
 
-			traceback.print_exc(file=sys.stdout)
+			#traceback.print_exc(file=sys.stdout)
 		except ASDuplicateException as error:
 			yield PackageFesl(
 				request_type=TypesRequests.ACCT,
@@ -328,6 +355,19 @@ class ProtocolFesl:
 					"TXN": "AddAccount",
 					"errorContainer.[]": 0,
 					"errorCode": 21,
+					"errorContainer.0.fieldName": account_field_errors.get("email", "Account.ParentalEmailAddress"),
+					"errorContainer.0.fieldError": "Unknown"
+				}
+			).deserializer()
+		except ASInvalidAgeException as error:
+			yield PackageFesl(
+				request_type=TypesRequests.ACCT,
+				package_type=TypesPackages.SINGLE_SERVER,
+				number=ctx.pkg.number,
+				options={
+					"TXN": "AddAccount",
+					"errorContainer.[]": 0,
+					"errorCode": 4294967131,
 					"errorContainer.0.fieldName": account_field_errors.get("email", "Account.ParentalEmailAddress"),
 					"errorContainer.0.fieldError": "Unknown"
 				}
@@ -428,7 +468,6 @@ class ProtocolFesl:
 
 			ctx.client._set_account_id(uid)
 		except Exception as error:
-
 			ctx.np.debug(f"{ctx.client.address[0]}({ctx.client.address[1]}) {error}")
 
 			yield PackageFesl(
@@ -437,7 +476,7 @@ class ProtocolFesl:
 				number=ctx.pkg.number,
 				options={
 					"TXN": "Login",
-					"localizedMessage": "The password was not correct. 1",
+					"localizedMessage": "null",
 					"errorContainer.[]": 0,
 					"errorCode": 101
 				}
@@ -470,6 +509,18 @@ class ProtocolFesl:
 					"errorContainer.[]": 0,
 					"localizedMessage": "LOCERROR_soldiernameexists",
 					"errorCode": 160
+				}
+			).deserializer()
+		except PSExceededNumProfilesException as error:
+			yield PackageFesl(
+				request_type=TypesRequests.ACCT,
+				package_type=TypesPackages.SINGLE_SERVER,
+				number=ctx.pkg.number,
+				options={
+					"TXN": "AddSubAccount",
+					"errorContainer.[]": 0,
+					"localizedMessage": "null",
+					"errorCode": 163
 				}
 			).deserializer()
 

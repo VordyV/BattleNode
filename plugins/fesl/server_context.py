@@ -4,10 +4,11 @@ from battlenode import NewProcess
 
 class Context:
 
-    def __init__(self, pkg: PackageFesl, new_process: NewProcess, client: Client):
+    def __init__(self, pkg: PackageFesl, new_process: NewProcess, client: Client, server):
         self.__pkg = pkg
         self.__np = new_process
         self.__client = client
+        self.__server = server
 
     @property
     def pkg(self):
@@ -28,3 +29,7 @@ class Context:
     @property
     def np(self):
         return self.__np
+
+    @property
+    def clients(self) -> list[Client]:
+        return self.__server._clients

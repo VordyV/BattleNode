@@ -16,10 +16,7 @@ class EchoServer(TCPServer):
         self._clients: list[Client] = []
 
     async def handle_stream(self, stream, address):
-        # client_proxy = await stream.read_bytes(8, partial=True)
-        # print("client_proxy", client_proxy)
         client = Client(stream, address)
-        #print(client)
         self._clients.append(client)
 
         await stream.write(b"\\lc\\1\\challenge\\0000000000\\id\\1\\final\\")
@@ -34,19 +31,18 @@ class EchoServer(TCPServer):
                     await stream.write(answer)
 
             except StreamClosedError:
-                print("UDP Lost client at host %s", address[0])
+                #print("UDP Lost client at host %s", address[0])
                 break
             except Exception as e:
                 print("UDP Lost client at host %s", address[0], e)
                 traceback.print_exc(file=sys.stdout)
                 break
+        await self._np.publish("gpcm.logout", {"uid": client.account_id, "pid": client.profile_id})
         self._clients.remove(client)
 
 async def handler(np: NewProcess):
     # manually specify only what is necessary for work
     #await init_database(apps={"fesl": ["plugins.fesl.models"]})
-    await init_database(apps={"fesl": ["plugins.fesl.models"]}, app_config=np.app_config)
-    np.init()
 
     server = EchoServer(new_process=np)
     server.listen(29900)
@@ -56,7 +52,5 @@ async def handler(np: NewProcess):
     server.stop()
 
 def main(queue, config, app_config):
-    try:
-        asyncio.run(handler(NewProcess(queue=queue, config=config, app_config=app_config, app_name="gpcm")))
-    except Exception as e:
-        queue.put(e)
+    np = NewProcess(queue=queue, config=config, app_config=app_config, app_name="gpcm", db_apps={"fesl": ["plugins.fesl.models"]})
+    np.start(handler)

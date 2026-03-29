@@ -45,7 +45,6 @@ class EchoServer(TCPServer):
 async def handler(np: NewProcess):
     # manually specify only what is necessary for work
     #await init_database(apps={"fesl": ["plugins.fesl.models"]})
-    np.init()
     server = EchoServer(new_process=np)
     server.listen(np.config.get("port"))
 
@@ -54,7 +53,5 @@ async def handler(np: NewProcess):
     server.stop()
 
 def main(queue, config, app_config):
-    try:
-        asyncio.run(handler(NewProcess(queue=queue, config=config, app_name="sb", app_config=app_config)))
-    except Exception as e:
-        queue.put(e)
+    np = NewProcess(queue=queue, config=config, app_config=app_config, app_name="sb")
+    np.start(handler)

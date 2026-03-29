@@ -549,13 +549,10 @@ async def read_5():
 <?xml version="1.0" encoding="UTF-8"?>
 <newsticker>
     <newsitem>
-	[2022.05.06] Новостей нет!
+	[2026.03.06] No news!
 	</newsitem>
     <newsitem>
-	[2022.05.25] Новый exe-файл вместо прописывания hosts. Инфо: vk.com/novgames_2142
-	</newsitem>
-    <newsitem>
-	[2022.07.21] Демки можно качать из игры. Меню Сообщество\Ролики. Подробнее: vk.com/novgames_2142.
+	[2026.03.21] Advertising placement by phone +79876543212.
 	</newsitem>
 </newsticker>"""
     return Response(content=i, media_type="application/xml")
@@ -563,8 +560,6 @@ async def read_5():
 
 async def handler(np: NewProcess):
     # manually specify only what is necessary for work
-    await init_database(apps={"stats": ["plugins.stats.models"], "fesl": ["plugins.fesl.models"]}, app_config=np.app_config)
-    np.init()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -579,7 +574,5 @@ async def handler(np: NewProcess):
     await server.serve()
 
 def main(queue, config, app_config):
-    try:
-        asyncio.run(handler(NewProcess(queue=queue, config=config, app_config=app_config, app_name="stats")))
-    except Exception as e:
-        queue.put(e)
+    np = NewProcess(queue=queue, config=config, app_config=app_config, app_name="stats", db_apps={"stats": ["plugins.stats.models"], "fesl": ["plugins.fesl.models"]})
+    np.start(handler)

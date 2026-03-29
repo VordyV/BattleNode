@@ -31,6 +31,7 @@ logging.getLogger("asyncmy").setLevel(logging.CRITICAL)
 class BattleNodeConfig(pydantic.BaseModel):
     plugins: list[str]
     log_level: str = "INFO"
+    write_logs_file: bool = False
     database_host: str
     database_port: int
     database_user: str
@@ -48,6 +49,7 @@ class BattleNodeConfig(pydantic.BaseModel):
 class BattleNode:
 
     shell_cursor: str = ""
+    log_dir: str = "logs"
 
     def __init__(self, plugin_folder: str = "plugins", parent_dir: str = ""):
         self.__plugin_folder = plugin_folder
@@ -259,6 +261,9 @@ class BattleNode:
                 logger.remove()
                 logger.add(StdoutProxy(raw=True), colorize=True, enqueue=True, format="<green>{time:HH:mm:ss}</green> <level>{message}</level>", level=self.__config.get("log_level"), filter=lambda record: "plugin" not in record["extra"])
                 logger.add(StdoutProxy(raw=True), colorize=True, enqueue=True, format="<green>{time:HH:mm:ss}</green> <white>[{extra[plugin]}]</white> <level>{message}</level>", level=self.__config.get("log_level"), filter=lambda record: "plugin" in record["extra"])
+                if self.config.get("write_logs_file"):
+                        logger.add(os.path.join(BattleNode.log_dir, "bn_{time:YYYY-MM-DD}.log"), rotation="00:00", enqueue=True, format="{time:HH:mm:ss} [{level}] - {message}", level="DEBUG", filter=lambda record: "plugin" not in record["extra"])
+                        logger.add(os.path.join(BattleNode.log_dir, "bn_plugins_{time:YYYY-MM-DD}.log"), rotation="00:00", enqueue=True, format="{time:HH:mm:ss} [{extra[plugin]}] - {message}", level="DEBUG", filter=lambda record: "plugin" in record["extra"])
                 await self.__events.emit_async(f"{battlenode.__name__}.start", False)
                 #self.__rps = self.__redis.pubsub()
                 await self.__loader.init()

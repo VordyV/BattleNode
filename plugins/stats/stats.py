@@ -18,6 +18,7 @@ class Stats(BasePlugin):
         ranks: dict[int, int] = {}
         awards: dict[str | int, list[str]] = {}
         options: list[str] = [] # additional data for the backend, beyond ranks and awards
+        log_level_uvicorn: str = "critical"
 
     class Meta(BasePlugin.Meta):
         name = "Stats"

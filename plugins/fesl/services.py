@@ -14,7 +14,10 @@ import uuid
 class ASDuplicateException(Exception): pass
 class ASAuthorizeException(Exception): pass
 class ASDeactivatedException(Exception): pass
+class ASInvalidAgeException(Exception): pass
 class PSDuplicateException(Exception): pass
+class PSNotFoundException(Exception): pass
+class PSExceededNumProfilesException(Exception): pass
 
 LoginField = Annotated[str, Field(max_length=16, min_length=3, pattern=r"^[A-Za-z0-9_=.]+$")]
 PasswordField = Annotated[str, Field(max_length=16, min_length=5)]
@@ -54,10 +57,16 @@ class Password:
 
 class AccountService:
 
+    min_age: int = 14
+
     @staticmethod
     @validate_call
     async def create(login: LoginField, password: PasswordField, email: EmailStr, country_code: CountryCodeField, date_of_birth: datetime.date, zip_code: str, ea_mail_flag: bool, third_party_mail_flag: bool, is_active: bool = True, parent_email: Union[EmailStr, None]  = None):
         if await AccountService.is_exists(login, email): raise ASDuplicateException(f"Cannot create a duplicate account with the same data login {login}, email {email}")
+
+        today = datetime.datetime.today()
+        user_age = today.year - date_of_birth.year - ((today.month, today.day) < (date_of_birth.month, date_of_birth.day))
+        if user_age < AccountService.min_age: raise ASInvalidAgeException(f"Cannot create an account with an invalid age {user_age}")
 
         hashed = Password.encode(password)
         account = await Account.create(login=login, hash=hashed, email=email, parent_email=parent_email, country_code=country_code, date_of_birth=date_of_birth, zip_code=zip_code, ea_mail_flag=ea_mail_flag, third_party_mail_flag=third_party_mail_flag, is_active=is_active)
@@ -104,20 +113,33 @@ class AccountService:
         if not account or not await asyncio.to_thread(Password.verify, password, account.hash): raise ASAuthorizeException(f"Authorization by login {login} failed")
         return account_id
 
+    @staticmethod
+    async def get_all(options: list[str], limit: int, offset: int) -> list[dict]:
+        return await Account.all().limit(limit).offset(offset).values(*options)
+
+    @staticmethod
+    async def get_total() -> int:
+        return await Account.all().count()
+
 class ProfileService:
+
+    max_profiles_per_account: int = 4
 
     @staticmethod
     async def create(account_id: int, name: NameField):
         account = await AccountService.get(account_id)
         if await ProfileService.is_exists(name): raise PSDuplicateException(f"Cannot create a duplicate profile {name}")
 
+        if await ProfileService.get_count(account_id) >= ProfileService.max_profiles_per_account: raise PSExceededNumProfilesException(f"No more than {ProfileService.max_profiles_per_account} profiles are allowed per account")
+
         profile = await Profile.create(account=account, name=name)
         return profile.id
 
     @staticmethod
-    async def get_for_name(name: str,  ignore_activ: bool = False) -> dict | None:
-        profile = await Profile.get(name=name)
-        if not profile.is_active and not ignore_activ: return None
+    async def get_for_name(name: str,  ignore_activ: bool = False) -> dict :
+        profile = await Profile.get_or_none(name=name)
+        if not profile or not profile.is_active and not ignore_activ: raise PSNotFoundException(f"Profile {name} not found")
+
         return {
             "id": profile.id,
             "name": profile.name,
@@ -174,6 +196,11 @@ class ProfileService:
             "is_active": profile.is_active,
         }
 
+    @staticmethod
+    async def get_count(account_id: int) -> int:
+        profiles = await ProfileService.get_all_for_account(account_id)
+        return len(profiles)
+
 class ChronicleService:
 
     @staticmethod
@@ -188,15 +215,15 @@ class Ticket:
         self.__redis = redis
         self.__lifetime = lifetime
 
-    async def add(self, uid: int) -> str:
+    async def add(self, pid: int) -> str:
         ticket = uuid.uuid4().hex
-        await self.__redis.set(Ticket.section.format(ticket=ticket), uid, ex=self.__lifetime.seconds)
+        await self.__redis.set(Ticket.section.format(ticket=ticket), pid, ex=self.__lifetime.seconds)
         return ticket
 
     async def verify(self, ticket: str) -> int | None:
         section = Ticket.section.format(ticket=ticket)
         if await self.__redis.exists(section):
-            uid = await self.__redis.get(section)
+            pid = await self.__redis.get(section)
             await self.__redis.delete(section)
-            return uid.decode()
+            return int(pid.decode())
         return None

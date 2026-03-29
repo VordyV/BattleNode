@@ -569,7 +569,7 @@ async def handler(np: NewProcess):
     app = FastAPI(lifespan=lifespan)
     app.include_router(router)
 
-    config = uvicorn.Config(app, host=np.config.get("server_address"), port=np.config.get("server_port"), log_level="critical")
+    config = uvicorn.Config(app, host=np.config.get("server_address"), port=np.config.get("server_port"), log_level=np.config.get("log_level_uvicorn"))
     server = uvicorn.Server(config)
     await server.serve()
 

@@ -99,6 +99,7 @@ class ProcessSupervisor:
             except queue.Empty: pass
 
         pp.process.join()
+        pp.plugin.logger.debug(f"Process exited with code {pp.process.exitcode}")
         #if not queue.empty():
         #    error = queue.get()
         #    raise PSException(f"{error} (exitcode: {pp.process.exitcode})")

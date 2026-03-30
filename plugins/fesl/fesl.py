@@ -20,7 +20,8 @@ class Fesl(BasePlugin):
     run_as_process = True
 
     class Config(pydantic.BaseModel):
-        port: int = 18400
+        server_port: int = 18400
+        server_address: str = "127.0.0.1"
         domainPartition_domain: str = "eagames"
         messengerIp: str = "0.0.0.0"
         messengerPort: int = 0

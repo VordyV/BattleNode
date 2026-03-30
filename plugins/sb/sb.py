@@ -22,7 +22,8 @@ class SB(BasePlugin):
     run_as_process = True
 
     class Config(pydantic.BaseModel):
-        port: int = 28910
+        server_port: int = 28910
+        server_address: str = "127.0.0.1"
         enctypex_key: str = ""
 
     class Meta(BasePlugin.Meta):

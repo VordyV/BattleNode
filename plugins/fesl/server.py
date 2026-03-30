@@ -104,7 +104,7 @@ async def handler(np: NewProcess):
     #task = asyncio.create_task(np.subscribe("fesl.test", t))
 
     server = EchoServer(new_process=np)
-    server.listen(np.config.get("port"))
+    server.listen(np.config.get("server_port"), address=np.config.get("server_address"))
 
     pc = PeriodicCallback(server.broadcast, 10000)
     pc.start()

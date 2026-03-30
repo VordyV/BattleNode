@@ -45,7 +45,7 @@ async def handler(np: NewProcess):
     #await init_database(apps={"fesl": ["plugins.fesl.models"]})
 
     server = EchoServer(new_process=np)
-    server.listen(29900)
+    server.listen(np.config.get("server_port"), address=np.config.get("server_address"))
 
     await asyncio.Event().wait()
 

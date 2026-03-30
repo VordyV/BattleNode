@@ -1,1 +1,0 @@
-from .adminpanel import AdminPanel

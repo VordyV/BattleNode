@@ -1,11 +1,10 @@
 from battlenode import BasePlugin, EventCollection, EventData, CommandCollection
-from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_ERROR, EVENT_JOB_EXECUTED, EVENT_JOB_REMOVED
+from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 #from apscheduler.job import Job
 import pydantic
 from .server import main
 from .services import ListOfServersService
 from opengsq.protocols.gamespy3 import GameSpy3
-import traceback
 import asyncio
 import datetime
 from rich.table import Table

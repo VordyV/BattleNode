@@ -1,6 +1,5 @@
 from battlenode import BasePlugin, EventCollection, EventData, CommandCollection
 from .server import main
-from .services import StatsService
 import pydantic
 
 class Stats(BasePlugin):

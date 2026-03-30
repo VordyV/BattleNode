@@ -3,7 +3,7 @@ from ._events import EventCollection
 from ._config import Config as Configure
 from abc import ABC
 from loguru import logger
-from typing import Union, Callable, Optional
+from typing import Callable, Optional
 from ._shared_data import SharedData
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import battlenode

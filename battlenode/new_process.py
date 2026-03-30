@@ -2,11 +2,9 @@ import queue
 import asyncio
 from typing import Callable
 import redis.asyncio as redis
-import os
 from ._shared_data import SharedData
 import json
 from ._config import Config
-from enum import Enum
 import traceback
 from battlenode import init_database
 

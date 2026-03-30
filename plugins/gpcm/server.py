@@ -1,12 +1,13 @@
 import asyncio
-from tornado.iostream import StreamClosedError, IOStream
+from tornado.iostream import StreamClosedError
 from tornado.tcpserver import TCPServer
 from .server_client import Client
 from .protocol import ProtocolGPCM
 from .package import PackageGPCM
 from .server_context import Context
 import traceback, sys
-from battlenode import NewProcess, init_database
+from battlenode import NewProcess
+
 
 class EchoServer(TCPServer):
 

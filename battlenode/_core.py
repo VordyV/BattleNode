@@ -9,13 +9,9 @@ import redis.asyncio as redis
 from loguru import logger
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from ._plugin_proxy import PluginProxy
-import multiprocessing
 import battlenode
 import pydantic
 import asyncio
-import signal
-import sys
-import logging
 import logging.config
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import PromptSession

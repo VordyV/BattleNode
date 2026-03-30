@@ -7,7 +7,7 @@ import asyncio
 from ._loader_exceptions import *
 from ._plugin import Plugin, BasePlugin
 from ._plugin_statuses import PluginStatuses
-from ._events import EventHub, EventCollection
+from ._events import EventCollection
 from ._database import init_database, close_database
 from ._process import ProcessSupervisor
 from ._shared_data import SharedData
@@ -17,7 +17,6 @@ import packaging.version
 import packaging.specifiers
 import battlenode
 import pydantic
-from pathlib import Path
 from loguru import logger
 
 class Loader:

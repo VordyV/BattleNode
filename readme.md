@@ -55,10 +55,10 @@ Events that are not related to plugins are global and are called by the applicat
 ---
 
 ## Ports in use
-| Plugin | Default port             |
-|--------|--------------------------|
-| fesl   | `18400` if proxy is used |
-| gpcm   | `29900`                  |
-| qr     | `27900`                  |
-| sb     | `28910`                  |
-| stats  | `80`                     |
+| Plugin | Default port                                |
+|--------|---------------------------------------------|
+| fesl   | `18400` if proxy is used, otherwise `18300` |
+| gpcm   | `29900`                                     |
+| qr     | `27900`                                     |
+| sb     | `28910`                                     |
+| stats  | `80`                                        |

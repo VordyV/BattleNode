@@ -51,3 +51,14 @@ Events that are not related to plugins are global and are called by the applicat
 | `RESTARTING`   | During shutdown and reloading                                                              |
 | `DISABLED`     | Cannot be loaded, this action is prohibited                                                |
 | `WAITING`      | First status after registration in the loader. Awaiting import                             |
+
+---
+
+## Ports in use
+| Plugin | Default port             |
+|--------|--------------------------|
+| fesl   | `18400` if proxy is used |
+| gpcm   | `29900`                  |
+| qr     | `27900`                  |
+| sb     | `28910`                  |
+| stats  | `80`                     |

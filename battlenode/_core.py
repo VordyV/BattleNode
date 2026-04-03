@@ -305,7 +305,7 @@ class BattleNode:
                         #logger.info(f"CH {message}")
                         data = json.loads(message["data"].decode())
                         if data["sender"] == "core": continue
-                        if data["data"]: self.__events.emit_future(message["channel"].decode(), data["data"], True)
+                        if data["data"]: self.__events.emit_future(message["channel"].decode(), True, data["data"])
                         else: self.__events.emit_future(message["channel"].decode(), True)
 
                 await asyncio.sleep(0)

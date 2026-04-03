@@ -1,3 +1,12 @@
+# Developed by VordyV, aka Vladislav Netievsky
+# mail: vorklab@outlook.com
+#
+#
+# v1.0 - 30.03.2026
+# ===
+# Release version
+# ===
+
 from battlenode import BasePlugin, EventCollection, EventData, CommandCollection
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 #from apscheduler.job import Job
@@ -27,8 +36,8 @@ class SB(BasePlugin):
 
     class Meta(BasePlugin.Meta):
         name = "Servers browser"
-        requires_battlenode = ">=0.1"
-        version = "0.1"
+        requires_battlenode = ">=0.4"
+        version = "1.0"
         dependencies = {
         }
 

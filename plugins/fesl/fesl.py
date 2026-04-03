@@ -1,3 +1,17 @@
+# Developed by VordyV, aka Vladislav Netievsky
+# mail: vorklab@outlook.com
+#
+#
+# v1.1 - 02.04.2026
+# ===
+# add event fesl.addsubaccount
+# ===
+#
+# v1.0 - 30.03.2026
+# ===
+# Release version
+# ===
+
 import datetime
 
 from battlenode import BasePlugin, EventCollection, EventData, CommandCollection
@@ -8,6 +22,8 @@ from rich.table import Table
 from rich.console import Console
 import math
 
+# Events
+# fesl.addsubaccount (uid: int, pid: int) - Creating a new profile
 
 class Fesl(BasePlugin):
 
@@ -19,6 +35,8 @@ class Fesl(BasePlugin):
     run_as_process = True
 
     class Config(pydantic.BaseModel):
+        # The game works with port 18300, but also uses SSLv3, which is no longer in use, so a proxy should be used,
+        # hence port 18400 by default. So, 18300 uses the proxy, and 18400 is the FESL server.
         server_port: int = 18400
         server_address: str = "127.0.0.1"
         domainPartition_domain: str = "eagames"
@@ -29,15 +47,16 @@ class Fesl(BasePlugin):
         theaterIp: str = "0.0.0.0"
         theaterPort: int = 0
         tos: str = "<body>Whether you chose it or it was chosen for you, it is the best city left.<br>I think so highly of City 17 that I have chosen to house my government here, in the Citadel so carefully provided by our Protectors.<br><br>I am proud to call City 17 my home.<br>Русский текст</body>"
-        countries: dict[str, CountryCodeField] = {"AU": "Country", "NZ": "Country2"}
+        countries: dict[CountryCodeField, str] = {"AU": "Country", "NZ": "Country2"}
+        # True if you are proxying traffic through the stunnel proxy
         proxy: bool = True
         key: str = ""
         minAge: int = 14
 
     class Meta(BasePlugin.Meta):
         name = "Fesl"
-        requires_battlenode = ">=0.1"
-        version = "0.2"
+        requires_battlenode = ">=0.4"
+        version = "1.0"
         dependencies = {
         }
 

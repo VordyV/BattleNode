@@ -32,4 +32,4 @@ class Context:
 
     @property
     def clients(self) -> list[Client]:
-        return self.__server._clients
+        return self.__server.clients

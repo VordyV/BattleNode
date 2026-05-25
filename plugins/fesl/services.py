@@ -10,6 +10,7 @@ import bcrypt
 from .actions import Actions
 import redis.asyncio as redis
 import uuid
+import time
 
 class ASDuplicateException(Exception): pass
 class ASAuthorizeException(Exception): pass
@@ -18,6 +19,7 @@ class ASInvalidAgeException(Exception): pass
 class PSDuplicateException(Exception): pass
 class PSNotFoundException(Exception): pass
 class PSExceededNumProfilesException(Exception): pass
+class GManyFailedAuthException(Exception): pass
 
 LoginField = Annotated[str, Field(max_length=16, min_length=3, pattern=r"^[A-Za-z0-9_=.]+$")]
 PasswordField = Annotated[str, Field(max_length=16, min_length=5)]
@@ -54,6 +56,41 @@ class Password:
     @staticmethod
     def verify(password: str, hash: str) -> str:
         return bcrypt.checkpw(password.encode("ascii"), hash.encode("ascii"))
+
+class Guardian:
+
+    section_record: str = "fesl:guardian:{address}"
+    section_banlist: str = "fesl:guardian:banlist:{address}"
+    TTL_record: datetime.timedelta = datetime.timedelta(hours=1)
+    ban_duration: datetime.timedelta = datetime.timedelta(minutes=1)
+
+    def __init__(self, redis: redis.Redis, address: str, max_num_failed_auth: int = 5):
+        self.__redis = redis
+        self.__max_num_failed_auth = max_num_failed_auth
+        self.__address = address
+
+    async def auth_attempt(self, result: bool):
+        section = Guardian.section_record.format(address=self.__address)
+        if not result:
+            count = await self.__redis.get(section)
+            if count == None: count = 1
+            else: count = int(count.decode())
+
+            if count >= self.__max_num_failed_auth:
+                section_banlist = Guardian.section_banlist.format(address=self.__address)
+                await self.__redis.set(section_banlist, "0", ex=Guardian.ban_duration)
+                await self.__redis.delete(section)
+                raise GManyFailedAuthException("Too many failed authorization attempts")
+
+            count += 1
+            await self.__redis.set(section, count, ex=Guardian.TTL_record)
+        else:
+            if await self.__redis.exists(section):
+                await self.__redis.delete(section)
+
+    async def check_ban(self):
+        section = Guardian.section_banlist.format(address=self.__address)
+        if await self.__redis.exists(section): raise GManyFailedAuthException("Too many failed authorization attempts")
 
 class AccountService:
 
@@ -104,13 +141,16 @@ class AccountService:
         return getattr(account, "id", None)
 
     @staticmethod
-    async def authorize(login: LoginField, password: PasswordField):
+    async def authorize(guardian: Guardian, login: LoginField, password: PasswordField):
         account_id = await AccountService.get_by_login(login)
         account = await AccountService.get(account_id)
 
         if not account.is_active: raise ASDeactivatedException(f"Account {login} deactivated")
 
-        if not account or not await asyncio.to_thread(Password.verify, password, account.hash): raise ASAuthorizeException(f"Authorization by login {login} failed")
+        if not account or not await asyncio.to_thread(Password.verify, password, account.hash):
+            await guardian.auth_attempt(False)
+            raise ASAuthorizeException(f"Authorization by login {login} failed")
+        await guardian.auth_attempt(True)
         return account_id
 
     @staticmethod

@@ -1,4 +1,5 @@
 import asyncio
+from tkinter.filedialog import Open
 from tornado.iostream import StreamClosedError
 from tornado.tcpserver import TCPServer
 from tornado.ioloop import PeriodicCallback
@@ -14,9 +15,9 @@ class EchoServer(TCPServer):
 
     def __init__(self, *args, new_process: NewProcess, **kwargs):
         super().__init__(*args, **kwargs)
-        self._np = new_process
-        self._clients: list[Client] = []
-        self._event_gpcm_logout = asyncio.create_task(self._np.subscribe("gpcm.logout", self._on_gpcm_logout))
+        self.np = new_process
+        self.clients: list[Client] = []
+        self._event_gpcm_logout = asyncio.create_task(self.np.subscribe("gpcm.logout", self._on_gpcm_logout))
 
     async def _on_gpcm_logout(self, data):
         try:
@@ -25,24 +26,28 @@ class EchoServer(TCPServer):
 
             if uid == None or pid == None: return
 
-            for client in self._clients:
+            for client in self.clients:
                 if (client.is_authenticated and client.account_id == uid) and (client.is_profile_authenticated and client.profile_id == pid):
                     client._remove_profile_id()
         except Exception as error:
             print(error)
 
     async def handle_stream(self, stream, address):
+        if len(self.clients) >= 500:
+            stream.closed()
+            return
         #client_proxy = await stream.read_bytes(8, partial=True)
         #print("client_proxy", client_proxy)
 
         #real_address: tuple[str, int] = address
         client = Client(stream, address)
-        self._clients.append(client)
+
+        self.clients.append(client)
         #profiles = await self._np.shared_data.get("profiles")
-        self._np.debug(f"{client.address[0]}({client.address[1]}) connected to the server")
+        self.np.debug(f"{client.address[0]}({client.address[1]}) connected to the server")
 
         try:
-            if self._np.config.get("proxy"):
+            if self.np.config.get("proxy"):
                 data = await stream.read_until(b"\n")
 
                 data = data.decode()
@@ -51,14 +56,10 @@ class EchoServer(TCPServer):
                     p_protocol = proxy_data[1]
                     p_real_ip = proxy_data[2]
                     p_real_port = proxy_data[4]
-                    self._np.debug(f"proxy data: {p_protocol} {p_real_ip}:{p_real_port}")
+                    self.np.debug(f"proxy data: {p_protocol} {p_real_ip}:{p_real_port}")
 
                     real_address = (p_real_ip, p_real_port)
                     client._set_address(real_address)
-
-                #print("proxy_data", proxy_data)
-
-            #print("client", client)
 
             while True:
                 try:
@@ -69,7 +70,7 @@ class EchoServer(TCPServer):
                     data = await stream.read_until(b"\x00")
                     #print("f recv", request_type + package_type + number + size + data)
                     pkg = PackageFesl.validate(request_type, package_type, number, size, data)
-                    async for answer in getattr(ProtocolFesl, pkg.options["TXN"])(Context(pkg=pkg, new_process=self._np, client=client, server=self)):
+                    async for answer in getattr(ProtocolFesl, pkg.options["TXN"])(Context(pkg=pkg, new_process=self.np, client=client, server=self)):
                         #print("f answer", answer)
                         await stream.write(answer)
 
@@ -79,27 +80,27 @@ class EchoServer(TCPServer):
                 except Exception as e:
                     #print("Lost client at host %s", address[0], e)
                     #traceback.print_exc(file=sys.stdout)
-                    self._np.debug(str(e))
-                    break
+                    self.np.debug(str(e))
+                    if self.np.config.get("resetConnOnError"): break
+
         except Exception as error:
             uid = -1
             if client.is_authenticated: uid = client.account_id
-            self._np.error(f"nexpected session error {client.address[0]}:{client.address[1]} UID {uid}:\n{error}", "")
+            self.np.error(f"unexpected session error {client.address[0]}:{client.address[1]} UID {uid}:\n{error}", "")
         finally:
-            self._np.debug(f"{client.address[0]}({client.address[1]}) disconnected from the server")
-            self._clients.remove(client)
+            self.np.debug(f"{client.address[0]}({client.address[1]}) disconnected from the server")
+            self.clients.remove(client)
 
     async def broadcast(self):
-        for client in self._clients:
+        for client in self.clients:
+            if client.stream.closed(): continue
             try:
                 await client.stream.write(await ProtocolFesl.PingPing())
             except Exception as e:
-                self._np.warning(f"ping request was not sent at host {client.address[0]}({client.address[1]}): {e}")
+                self.np.warning(f"ping request was not sent at host {client.address[0]}({client.address[1]}): {e}")
 
 async def handler(np: NewProcess):
     # manually specify only what is necessary for work
-
-    #task = asyncio.create_task(np.subscribe("fesl.test", t))
 
     server = EchoServer(new_process=np)
     server.listen(np.config.get("server_port"), address=np.config.get("server_address"))

@@ -13,6 +13,9 @@ from .services import (AccountService,
 					   Ticket,
 					   ASInvalidAgeException,
 					   PSNotFoundException,
+					   ASDeactivatedException,
+					   Guardian,
+					   GManyFailedAuthException,
 					   PSExceededNumProfilesException)
 from .server_client import Client
 from .server_context import Context
@@ -433,7 +436,11 @@ class ProtocolFesl:
 	async def Login(ctx: Context):
 		#print(pkg.options)
 
+		guardian = Guardian(ctx.np.redis, address=ctx.client.address[0])
+
 		try:
+			await guardian.check_ban()
+
 			if ctx.pkg.options.get("encryptedInfo"):
 				token = ctx.pkg.options.get("encryptedInfo")
 				login, password = await asyncio.to_thread(EncryptedInfo(ctx.config.get("key")).decode_token, token)
@@ -442,7 +449,7 @@ class ProtocolFesl:
 				password = str(ctx.pkg.options.get("password"))
 				token = await asyncio.to_thread(EncryptedInfo(ctx.config.get("key")).encode_token,login, password)
 
-			uid = await AccountService.authorize(login=login, password=password)
+			uid = await AccountService.authorize(guardian, login=login, password=password)
 			account = await AccountService.get_info(account_id=uid)
 
 			ctx.np.debug(f"{ctx.client.address[0]}({ctx.client.address[1]}) {account.get("login")}#{uid} successfully authorized")
@@ -467,7 +474,38 @@ class ProtocolFesl:
 			).deserializer()
 
 			ctx.client._set_account_id(uid)
-		except Exception as error:
+
+		except GManyFailedAuthException as error:
+			ctx.np.debug(f"{ctx.client.address[0]}({ctx.client.address[1]}) {error}")
+
+			yield PackageFesl(
+				request_type=TypesRequests.ACCT,
+				package_type=TypesPackages.SINGLE_SERVER,
+				number=ctx.pkg.number,
+				options={
+					"TXN": "Login",
+					"localizedMessage": "null",
+					"errorContainer.[]": 0,
+					"errorCode": 121
+				}
+			).deserializer()
+
+		except ASDeactivatedException as error:
+			ctx.np.debug(f"{ctx.client.address[0]}({ctx.client.address[1]}) {error}")
+
+			yield PackageFesl(
+				request_type=TypesRequests.ACCT,
+				package_type=TypesPackages.SINGLE_SERVER,
+				number=ctx.pkg.number,
+				options={
+					"TXN": "Login",
+					"localizedMessage": "null",
+					"errorContainer.[]": 0,
+					"errorCode": 102
+				}
+			).deserializer()
+
+		except ASAuthorizeException as error:
 			ctx.np.debug(f"{ctx.client.address[0]}({ctx.client.address[1]}) {error}")
 
 			yield PackageFesl(
@@ -482,6 +520,21 @@ class ProtocolFesl:
 				}
 			).deserializer()
 
+		except Exception as error:
+			ctx.np.debug(f"{ctx.client.address[0]}({ctx.client.address[1]}) {error}")
+
+			yield PackageFesl(
+				request_type=TypesRequests.ACCT,
+				package_type=TypesPackages.SINGLE_SERVER,
+				number=ctx.pkg.number,
+				options={
+					"TXN": "Login",
+					"localizedMessage": "null",
+					"errorContainer.[]": 0,
+					"errorCode": 99
+				}
+			).deserializer()
+
 	@staticmethod
 	@txn(auth=True)
 	async def AddSubAccount(ctx: Context):
@@ -491,6 +544,8 @@ class ProtocolFesl:
 
 			pid = await ProfileService.create(account_id=ctx.client.account_id, name=ctx.pkg.options.get("name"))
 
+			await ctx.np.publish("fesl.addsubaccount", {"uid": ctx.client.account_id, "pid": pid})
+			await asyncio.sleep(1)
 			yield PackageFesl(
 				request_type=TypesRequests.ACCT,
 				package_type=TypesPackages.SINGLE_SERVER,

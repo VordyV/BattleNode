@@ -52,6 +52,8 @@ class Fesl(BasePlugin):
         proxy: bool = True
         key: str = ""
         minAge: int = 14
+        # In case of an error deserializing the received packet or any other error, the server will forcibly reset the connection
+        resetConnOnError: bool = False
 
     class Meta(BasePlugin.Meta):
         name = "Fesl"
